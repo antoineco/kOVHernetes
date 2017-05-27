@@ -1,0 +1,35 @@
+---
+apiVersion: v1
+kind: Pod
+metadata:
+  name: kube-scheduler
+  namespace: kube-system
+spec:
+  hostNetwork: true
+  containers:
+  - name: kube-scheduler
+    image: quay.io/coreos/hyperkube:v1.6.4_coreos.0
+    command:
+    - kube-scheduler
+    - --kubeconfig=/kubeconfig
+    resources:
+      requests:
+        cpu: 100m
+    ports:
+    - containerPort: 10251
+      name: http
+    livenessProbe:
+      httpGet:
+        host: 127.0.0.1
+        path: /healthz
+        port: http
+      initialDelaySeconds: 15
+      timeoutSeconds: 15
+    volumeMounts:
+    - mountPath: /kubeconfig
+      name: kubeconfig
+      readOnly: true
+  volumes:
+  - hostPath:
+      path: /var/lib/kubelet/kubeconfig
+    name: kubeconfig

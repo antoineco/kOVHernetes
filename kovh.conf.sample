@@ -1,0 +1,20 @@
+; sample configuration file for the OVH client and kOVHernetes CLI tool
+
+[default]
+; general configuration: default endpoint
+; see https://github.com/ovh/python-ovh#2-configure-your-application
+;   for a list of available endpoints
+endpoint=ovh-eu
+
+[ovh-eu]
+; configuration specific to 'ovh-eu' endpoint
+;application_key=my_app_key
+;application_secret=my_application_secret
+;consumer_key=my_consumer_key
+
+[kovhernetes]
+; configuration for the kovh cli
+;project=project_id
+;region=region_name
+;sshkey=ssh_key_id
+;flavor=flavor_id

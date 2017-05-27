@@ -1,3 +1,7 @@
+# OVH conf
+ovh.conf
+kovh.conf
+
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]
