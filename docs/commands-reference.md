@@ -39,10 +39,11 @@ Commands:
 Create a Kubernetes cluster.
 
 ```
-Usage: create -n NAME
+Usage: create -n NAME [-s SIZE]
 
 Options:
   -n, --name NAME   Cluster name
+  -s, --size SIZE   Cluster size [default: 3]
 ```
 
 #### `destroy`

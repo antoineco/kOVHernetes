@@ -11,8 +11,9 @@ spec:
     image: quay.io/coreos/hyperkube:v1.6.4_coreos.0
     command:
     - kube-controller-manager
-    - --kubeconfig=/kubeconfig
-    - --service-account-private-key-file=/ssl/apiserver.key
+    - --kubeconfig=/etc/kubernetes/kubeconfig
+    - --root-ca-file=/etc/kubernetes/ca/ca.pem
+    - --service-account-private-key-file=/etc/kubernetes/tls/apiserver.key
     resources:
       requests:
         cpu: 200m
@@ -27,16 +28,22 @@ spec:
       initialDelaySeconds: 15
       timeoutSeconds: 15
     volumeMounts:
-    - mountPath: /ssl
-      name: ssl-certs
-      readOnly: true
-    - mountPath: /kubeconfig
+    - mountPath: /etc/kubernetes/kubeconfig
       name: kubeconfig
+      readOnly: true
+    - mountPath: /etc/kubernetes/tls/apiserver.key
+      name: tls-apiserver-key
+      readOnly: true
+    - mountPath: /etc/kubernetes/ca
+      name: ca-certs
       readOnly: true
   volumes:
   - hostPath:
-      path: /etc/kubernetes/ssl
-    name: ssl-certs
-  - hostPath:
-      path: /var/lib/kubelet/kubeconfig
+      path: /etc/kubernetes/kubeconfig
     name: kubeconfig
+  - hostPath:
+      path: /etc/kubernetes/tls/apiserver.key
+    name: tls-apiserver-key
+  - hostPath:
+      path: /etc/kubernetes/ca
+    name: ca-certs

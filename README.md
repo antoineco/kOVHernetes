@@ -2,10 +2,11 @@
 
 ![kOVHernetes][logo]
 
-kOVHernetes (*`kovh`*) is a command-line tool for managing Kubernetes clusters on the [OVH Cloud][ovhcloud] platform.
+kOVHernetes (*`kovh`*) is a command-line utility for managing [Kubernetes][k8s] clusters on the [OVH Cloud][ovhcloud]
+platform.
 
-It creates Kubernetes clusters based on the CoreOS [Container Linux][cont-linux] operating system with
-[flannel][flannel] providing the virtual container network.
+It deploys cloud instances running the CoreOS [Container Linux][cont-linux] operating system with Kubernetes components
+pre-configured using [Ignition][ignition], including a [flannel][flannel] overlay network for containers.
 
 #### Contents
 
@@ -20,8 +21,8 @@ It creates Kubernetes clusters based on the CoreOS [Container Linux][cont-linux]
 
 ### :warning: CoreOS Container Linux image
 
-The *Container Linux* image available in the OVH image service as of 05/19/2017 is outdated and therefore missing
-features required by the `kovh` client (Ignition OpenStack compatibility, *rkt* wrapper scripts).
+The *Container Linux* image available in the OVH image service as of 05/28/2017 is outdated and misses features required
+by the `kovh` client (Ignition OpenStack compatibility, *rkt* wrapper scripts).
 
 Until this problem is tackled by OVH, please follow the instructions at [Running CoreOS Container Linux on
 OpenStack][coreos-openstack] to download the latest Stable release, then upload it to your OVH account with:
@@ -40,7 +41,13 @@ OpenStack][coreos-openstack] to download the latest Stable release, then upload 
 
 ### Runtime
 
-[Python][python] interpreter (version 3.2 or above) with the [`setuptools`][setuptools] package.
+[Python][python] interpreter (version 3.2 or above) with the [`setuptools`][py-setuptools] package.
+
+Additionally on **Linux**:
+
+* [`cryptography`][py-cryptography] package
+  * provided by the `python3-cryptography` OS package
+  * installed from source, see [Building cryptography on Linux][cryp-req]
 
 ### Cloud provider
 
@@ -114,25 +121,29 @@ Alternatively, all settings can be overriden by environment variables using the 
 
 ## Disclaimer
 
-**Use at your own risk**.
+kOVHernetes is a toy project written for testing purposes. **Use at your own risk**.
 
-* This project is **not** supported by [OVH][ovh] in any way.
-* This is a toy project for testing purposes. Several security aspects have been omitted for the sake of simplicity.
+* It is **not** supported by [OVH][ovh] in any manner.
+* Several security aspects have been omitted for the sake of simplicity, making it unsuitable for production
+  environments.
 
 ## Roadmap
 
 * [ ] Clusters listing
-* [ ] `kubectl` configuration
-* [ ] Multi-node clusters
-* [ ] PKI
 * [ ] CNI networking
+* [ ] `kubectl` configuration
+* [ ] Master HA
 
 
 [logo]: images/logo.png
+[k8s]: https://kubernetes.io/
 [ovhcloud]: https://www.ovh.com/cloud/
 [cont-linux]: https://coreos.com/os/
+[ignition]: https://coreos.com/ignition/
 [flannel]: https://coreos.com/flannel/
 [python]: https://www.python.org/downloads/
-[setuptools]: https://pypi.python.org/pypi/setuptools
+[py-setuptools]: https://pypi.python.org/pypi/setuptools
+[py-cryptography]: https://pypi.python.org/pypi/cryptography
+[cryp-req]: https://cryptography.io/en/latest/installation/#building-cryptography-on-linux
 [dash]: images/project_dashboard.png
 [ovh]: https://www.ovh.com/

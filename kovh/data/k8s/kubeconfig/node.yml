@@ -5,12 +5,13 @@ current-context: ovh
 clusters:
 - name: ovh
   cluster:
-    server: https://192.168.0.1:6443
-    insecure-skip-tls-verify: true
+    server: https://host-192-168-0-1:6443
+    certificate-authority: ca/ca.pem
 users:
 - name: ovh
   user:
-    token: changeme
+    client-certificate: tls/component.crt
+    client-key: tls/component.key
 contexts:
 - name: ovh
   context:

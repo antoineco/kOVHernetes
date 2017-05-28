@@ -1,15 +1,53 @@
-from json          import dumps
-from gzip          import compress
-from urllib.parse  import quote
-from pkg_resources import resource_string
+from json           import dumps
+from gzip           import compress
+from urllib.parse   import quote
+from pkg_resources  import resource_string
+from OpenSSL.crypto import dump_certificate, dump_privatekey, FILETYPE_PEM
 
 from .project import get_coreos_images
+from .ca      import ca
+
 
 def res_raw(resource):
     return resource_string(__name__, resource)
 
 def res_gzip(resource):
     return compress(res_raw(resource))
+
+# Static files
+
+kubelet = res_raw('data/systemd/kubelet.service')
+
+kube_apiserver = res_gzip('data/k8s/manifests/kube-apiserver.yml')
+kube_proxy = res_gzip('data/k8s/manifests/kube-proxy.yml')
+kube_controller_manager = res_gzip('data/k8s/manifests/kube-controller-manager.yml')
+kube_scheduler = res_gzip('data/k8s/manifests/kube-scheduler.yml')
+
+kubeconfig_master = res_gzip('data/k8s/kubeconfig/master.yml')
+kubeconfig_node = res_gzip('data/k8s/kubeconfig/node.yml')
+
+etcd_member = res_raw('data/systemd/etcd-member.service.d/10-cluster.conf')
+flanneld_net = res_raw('data/systemd/flanneld.service.d/10-network-config.conf')
+flanneld_etcd = res_raw('data/systemd/flanneld.service.d/10-client.conf')
+
+# Superseded by /etc/hosts hack
+#resolved_dnsstub= res_gzip('data/systemd/resolved.conf.d/90-dns-stub.conf')
+coremeta_override = res_raw('data/systemd/coreos-metadata.service.d/10-provider.conf')
+coremetassh_override = res_raw('data/systemd/coreos-metadata-sshkeys@.service.d/10-provider.conf')
+
+# PKI
+
+ca_key_pem = compress(dump_privatekey(FILETYPE_PEM, ca.key))
+ca_crt_pem = compress(dump_certificate(FILETYPE_PEM, ca.cert))
+
+s_key, s_cert = ca.create_server_pair('kube apiserver', 'host-192-168-0-1')
+s_key_pem = compress(dump_privatekey(FILETYPE_PEM, s_key))
+s_crt_pem = compress(dump_certificate(FILETYPE_PEM, s_cert))
+
+c_key, c_cert = ca.create_client_pair('kube components', 'component')
+c_key_pem = compress(dump_privatekey(FILETYPE_PEM, c_key))
+c_crt_pem = compress(dump_certificate(FILETYPE_PEM, c_cert))
+
 
 class Host:
 
@@ -106,29 +144,6 @@ class Host:
         return body
 
 
-# FILES -----------------------------------------------------------------------
-
-kubelet = res_raw('data/systemd/kubelet.service')
-
-kube_apiserver = res_gzip('data/k8s/manifests/kube-apiserver.yml')
-kube_proxy = res_gzip('data/k8s/manifests/kube-proxy.yml')
-kube_controller_manager = res_gzip('data/k8s/manifests/kube-controller-manager.yml')
-kube_scheduler = res_gzip('data/k8s/manifests/kube-scheduler.yml')
-
-kubeconfig_master = res_gzip('data/k8s/kubeconfig/kubelet-master.yml')
-kubeconfig_node = res_gzip('data/k8s/kubeconfig/kubelet-node.yml')
-
-etcd_member = res_raw('data/systemd/etcd-member.service.d/10-cluster.conf')
-flanneld_net = res_raw('data/systemd/flanneld.service.d/10-network-config.conf')
-flanneld_etcd = res_raw('data/systemd/flanneld.service.d/10-client.conf')
-
-# Superseded by /etc/hosts hack
-#resolved_dnsstub= res_gzip('data/systemd/resolved.conf.d/90-dns-stub.conf')
-coremeta_override = res_raw('data/systemd/coreos-metadata.service.d/10-provider.conf')
-coremetassh_override = res_raw('data/systemd/coreos-metadata-sshkeys@.service.d/10-provider.conf')
-
-# IGNITION ---------------------------------------------------------------------
-
 common_units = [
     {
         'name': 'coreos-metadata.service',
@@ -212,7 +227,7 @@ master_files = [
     #},
     {
         'filesystem': 'root',
-        'path': '/var/lib/kubelet/kubeconfig',
+        'path': '/etc/kubernetes/kubeconfig',
         'mode': 416, # 0640
         'contents': {
             'source': 'data:,{}'.format(quote(kubeconfig_master)),
@@ -221,10 +236,38 @@ master_files = [
     },
     {
         'filesystem': 'root',
-        'path': '/etc/kubernetes/tokens.csv',
+        'path': '/etc/kubernetes/ca/ca.key',
+        'mode': 384, # 0600
+        'contents': {
+            'source': 'data:,{}'.format(quote(ca_key_pem)),
+            'compression': 'gzip'
+        }
+    },
+    {
+        'filesystem': 'root',
+        'path': '/etc/kubernetes/ca/ca.pem',
         'mode': 416, # 0640
         'contents': {
-            'source': 'data:,{}'.format(quote('changeme,ovh,ovh'))
+            'source': 'data:,{}'.format(quote(ca_crt_pem)),
+            'compression': 'gzip'
+        }
+    },
+    {
+        'filesystem': 'root',
+        'path': '/etc/kubernetes/tls/apiserver.key',
+        'mode': 384, # 0600
+        'contents': {
+            'source': 'data:,{}'.format(quote(s_key_pem)),
+            'compression': 'gzip'
+        }
+    },
+    {
+        'filesystem': 'root',
+        'path': '/etc/kubernetes/tls/apiserver.crt',
+        'mode': 416, # 0640
+        'contents': {
+            'source': 'data:,{}'.format(quote(s_crt_pem)),
+            'compression': 'gzip'
         }
     },
     {
@@ -276,10 +319,37 @@ master_files = [
 node_files = [
     {
         'filesystem': 'root',
-        'path': '/var/lib/kubelet/kubeconfig',
+        'path': '/etc/kubernetes/kubeconfig',
         'mode': 416, # 0640
         'contents': {
             'source': 'data:,{}'.format(quote(kubeconfig_node)),
+            'compression': 'gzip'
+        }
+    },
+    {
+        'filesystem': 'root',
+        'path': '/etc/kubernetes/ca/ca.pem',
+        'mode': 416, # 0640
+        'contents': {
+            'source': 'data:,{}'.format(quote(ca_crt_pem)),
+            'compression': 'gzip'
+        }
+    },
+    {
+        'filesystem': 'root',
+        'path': '/etc/kubernetes/tls/component.key',
+        'mode': 384, # 0600
+        'contents': {
+            'source': 'data:,{}'.format(quote(c_key_pem)),
+            'compression': 'gzip'
+        }
+    },
+    {
+        'filesystem': 'root',
+        'path': '/etc/kubernetes/tls/component.crt',
+        'mode': 416, # 0640
+        'contents': {
+            'source': 'data:,{}'.format(quote(c_crt_pem)),
             'compression': 'gzip'
         }
     },

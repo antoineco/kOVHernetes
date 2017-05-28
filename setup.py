@@ -21,7 +21,8 @@ setup(
     # Dependencies
     install_requires=[
         'docopt>=0.6.2',
-        'ovh>=>0.4.7'
+        'ovh>=0.4.7',
+        'pyOpenSSL>=17.0.0'
     ],
 
     # Script info

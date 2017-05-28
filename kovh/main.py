@@ -49,7 +49,7 @@ def main():
 
     command = args['<command>']
 
-    # TODO: per-command try/except, too expensive to check this every time
+    # TODO: check credential validity on APIError, too expensive to check before every command
     #if not has_valid_cred(c):
     #    print('Authentication denied')
     #    print("Verify token validity with 'kovh auth show'")
@@ -137,10 +137,12 @@ def project_command(client, args):
         print('Project: {}'.format(client._project if client._project else '-'))
         print('Region: {}'.format(client._region if client._region else '-'))
         print('SSH key: {}'.format(client._sshkey if client._sshkey else '-'))
+    elif command == 'services':
+        print(project.get_services(client))
     else:
         missing_params = client.missing_params(['project'])
         if missing_params:
-            print('Missing parameters from configuration:', ', '.join(["'{}'".format(x) for x in missing_params ]))
+            print('Missing parameters from configuration:', ', '.join(["'{}'".format(x) for x in missing_params]))
             exit(1)
 
         if command == 'flavors':
@@ -155,8 +157,6 @@ def project_command(client, args):
             print(project.get_networks(client))
         elif command == 'regions':
             print(project.get_regions(client))
-        elif command == 'services':
-            print(project.get_services(client))
         elif command == 'snapshots':
             print(project.get_snapshots(client))
         elif command == 'usage':
@@ -166,10 +166,11 @@ def project_command(client, args):
 def create_command(client, args):
     """Create a Kubernetes cluster
 
-    Usage: create -n NAME
+    Usage: create -n NAME [-s SIZE]
 
     Options:
       -n, --name NAME   Cluster name
+      -s, --size SIZE   Cluster size [default: 3]
     """
     args = docopt(cleandoc(create_command.__doc__), args)
 
@@ -179,6 +180,11 @@ def create_command(client, args):
         exit(1)
 
     name = 'kovh:{}:'.format(args['--name'])
+    try:
+        size = int(args['--size'])
+    except ValueError as e:
+        print("Option --size expects a number, got '{}'".format(args['--size']))
+        exit(1)
 
     try:
         pub_net_id = project.get_public_networks(client)[0]
@@ -192,7 +198,8 @@ def create_command(client, args):
         print(e)
         exit(1)
 
-    # TODO: rollback network creation on failure
+    # TODO: rollback on failure
+
     print("Creating private network '{}' with VLAN id {}".format(name, vlan_id), end='', flush=True)
     try:
         priv_net = infra.create_priv_network(client, name, vlan_id)
@@ -236,32 +243,33 @@ def create_command(client, args):
         client=client
     )
 
-    node1 = Host(
-        name='{}:node1'.format(name),
-        roles=['node'],
-        pub_net=pub_net_id,
-        priv_net=priv_net['id'],
-        client=client
-    )
-
-    node2 = Host(
-        name='{}:node2'.format(name),
-        roles=['node'],
-        pub_net=pub_net_id,
-        priv_net=priv_net['id'],
-        client=client
-    )
+    nodes = []
+    for i in range(1, size):
+        nodes.append(
+            Host(
+                name='{}:node{:02}'.format(name, i),
+                roles=['node'],
+                pub_net=pub_net_id,
+                priv_net=priv_net['id'],
+                client=client
+            )
+        )
 
     print('Creating instances', end='', flush=True)
     try:
         client.post('/cloud/project/{}/instance'.format(client._project), **master.make_body())
-        # allow neutron DHCP to be created before other instances
-        sleep(2)
-        client.post('/cloud/project/{}/instance'.format(client._project), **node1.make_body())
-        client.post('/cloud/project/{}/instance'.format(client._project), **node2.make_body())
     except APIError as e:
         print(e)
         exit(1)
+
+    # prevents instances from being created before neutron DHCP
+    if nodes: sleep(2)
+    for node in nodes:
+        try:
+            client.post('/cloud/project/{}/instance'.format(client._project), **node.make_body())
+        except APIError as e:
+            print(e)
+            exit(1)
 
     print('\t[OK]')
 
@@ -301,7 +309,7 @@ def destroy_command(client, args):
 
         print('Waiting for instances termination', end='', flush=True)
 
-        # TODO: async checks and wait for results
+        # TODO: check for deletion asynchronously
         for inst in del_instances:
             instance_deleted = False
             while not instance_deleted:

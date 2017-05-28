@@ -11,7 +11,7 @@ spec:
     image: quay.io/coreos/hyperkube:v1.6.4_coreos.0
     command:
     - kube-scheduler
-    - --kubeconfig=/kubeconfig
+    - --kubeconfig=/etc/kubernetes/kubeconfig
     resources:
       requests:
         cpu: 100m
@@ -26,10 +26,10 @@ spec:
       initialDelaySeconds: 15
       timeoutSeconds: 15
     volumeMounts:
-    - mountPath: /kubeconfig
+    - mountPath: /etc/kubernetes/kubeconfig
       name: kubeconfig
       readOnly: true
   volumes:
   - hostPath:
-      path: /var/lib/kubelet/kubeconfig
+      path: /etc/kubernetes/kubeconfig
     name: kubeconfig

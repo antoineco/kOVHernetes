@@ -14,9 +14,9 @@ spec:
     - --etcd-servers=http://127.0.0.1:2379
     - --service-cluster-ip-range=10.0.0.0/24
     - --admission-control=NamespaceLifecycle,LimitRanger,ServiceAccount,DefaultStorageClass,ResourceQuota
+    - --tls-ca-file=/etc/kubernetes/ca/ca.pem
+    - --client-ca-file=/etc/kubernetes/ca/ca.pem
     - --allow-privileged
-    - --cert-dir=/ssl
-    - --token-auth-file=/tokens.csv
     ports:
     - containerPort: 8080
       name: http
@@ -28,16 +28,16 @@ spec:
       initialDelaySeconds: 15
       timeoutSeconds: 15
     volumeMounts:
-    - mountPath: /ssl
-      name: ssl-certs
-      readOnly: false
-    - mountPath: /tokens.csv
-      name: tokens
+    - mountPath: /var/run/kubernetes
+      name: tls-certs
+      readOnly: true
+    - mountPath: /etc/kubernetes/ca
+      name: ca-certs
       readOnly: true
   volumes:
   - hostPath:
-      path: /etc/kubernetes/ssl
-    name: ssl-certs
+      path: /etc/kubernetes/tls
+    name: tls-certs
   - hostPath:
-      path: /etc/kubernetes/tokens.csv
-    name: tokens
+      path: /etc/kubernetes/ca
+    name: ca-certs
