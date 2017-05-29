@@ -31,6 +31,7 @@ from .       import project
 from .       import infra
 from .client import Client
 from .host   import Host
+from .ca     import CA
 from .auth   import get_current_cred
 
 
@@ -133,6 +134,7 @@ def project_command(client, args):
 
     command = args['<command>']
 
+    # TODO: need a command dispatcher there
     if command == 'show':
         print('Project: {}'.format(client._project if client._project else '-'))
         print('Region: {}'.format(client._region if client._region else '-'))
@@ -235,12 +237,17 @@ def create_command(client, args):
 
     print('\t[OK]')
 
+    print('Creating Certificate Authority', end='', flush=True)
+    k8s_ca = CA()
+    print('\t[OK]')
+
     master = Host(
         name='{}:master'.format(name),
         roles=['master'],
         pub_net=pub_net_id,
         priv_net=priv_net['id'],
-        client=client
+        client=client,
+        ca=k8s_ca
     )
 
     nodes = []
@@ -251,7 +258,8 @@ def create_command(client, args):
                 roles=['node'],
                 pub_net=pub_net_id,
                 priv_net=priv_net['id'],
-                client=client
+                client=client,
+                ca=k8s_ca
             )
         )
 

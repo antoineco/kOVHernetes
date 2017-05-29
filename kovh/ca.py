@@ -121,7 +121,3 @@ class CA:
         type(self).__next_serial += 1
 
         return key, cert
-
-
-# System wide CA instance
-ca = CA()

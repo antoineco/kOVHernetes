@@ -13,7 +13,11 @@ Environment="RKT_RUN_ARGS=--uuid-file-save=/var/lib/coreos/kubelet-wrapper.uuid 
 
 ExecStartPre=/usr/bin/mkdir --parents /var/lib/coreos
 ExecStartPre=-/usr/bin/rkt rm --uuid-file=/var/lib/coreos/kubelet-wrapper.uuid
-ExecStart=/usr/lib/coreos/kubelet-wrapper --kubeconfig=/etc/kubernetes/kubeconfig --require-kubeconfig --pod-manifest-path=/etc/kubernetes/manifests --allow-privileged
+ExecStart=/usr/lib/coreos/kubelet-wrapper \
+  --kubeconfig=/etc/kubernetes/kubeconfig \
+  --require-kubeconfig \
+  --pod-manifest-path=/etc/kubernetes/manifests \
+  --allow-privileged
 ExecStop=-/usr/bin/rkt stop --uuid-file=/var/lib/coreos/kubelet-wrapper.uuid
 
 [Install]

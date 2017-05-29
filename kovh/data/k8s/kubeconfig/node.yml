@@ -10,8 +10,8 @@ clusters:
 users:
 - name: ovh
   user:
-    client-certificate: tls/component.crt
-    client-key: tls/component.key
+    client-certificate: tls/client.crt
+    client-key: tls/client.key
 contexts:
 - name: ovh
   context:
