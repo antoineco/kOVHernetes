@@ -17,7 +17,9 @@ ExecStart=/usr/lib/coreos/kubelet-wrapper \
   --kubeconfig=/etc/kubernetes/kubeconfig \
   --require-kubeconfig \
   --pod-manifest-path=/etc/kubernetes/manifests \
-  --allow-privileged
+  --allow-privileged \
+  --cluster-dns=10.0.0.10 \
+  --cluster-domain=cluster.local
 ExecStop=-/usr/bin/rkt stop --uuid-file=/var/lib/coreos/kubelet-wrapper.uuid
 
 [Install]

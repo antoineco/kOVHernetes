@@ -31,12 +31,26 @@ class Host:
             ca_crt = compress(dump_certificate(FILETYPE_PEM, ca.cert))
 
             # TLS pair for kube api server
-            s_key, s_crt = ca.create_server_pair('kube apiserver', 'host-192-168-0-1')
+            # TODO: master IP happens to be always the first IP in subnet, but would be better not to assume that
+            s_key, s_crt = ca.create_server_pair(
+                'k8s API server',
+                'apiserver',
+                [
+                    'DNS:kubernetes.default.svc.cluster.local',
+                    'DNS:kubernetes.default.svc',
+                    'DNS:kubernetes.default',
+                    'DNS:kubernetes',
+                    'DNS:localhost',
+                    'IP:10.0.0.1',
+                    'DNS:host-192-168-0-1',
+                    'IP:192.168.0.1'
+                ]
+            )
             s_key_pem = compress(dump_privatekey(FILETYPE_PEM, s_key))
             s_crt_pem = compress(dump_certificate(FILETYPE_PEM, s_crt))
 
             # TLS pair for kube components
-            c_key, c_crt = ca.create_client_pair('kube components', 'master')
+            c_key, c_crt = ca.create_client_pair('k8s components', 'master')
             c_key_pem = compress(dump_privatekey(FILETYPE_PEM, c_key))
             c_crt_pem = compress(dump_certificate(FILETYPE_PEM, c_crt))
 
@@ -104,7 +118,7 @@ class Host:
             ca_crt = compress(dump_certificate(FILETYPE_PEM, ca.cert))
 
             # TLS pair for kube components
-            c_key, c_crt = ca.create_client_pair('kube components', 'node')
+            c_key, c_crt = ca.create_client_pair('k8s components', 'node')
             c_key_pem = compress(dump_privatekey(FILETYPE_PEM, c_key))
             c_crt_pem = compress(dump_certificate(FILETYPE_PEM, c_crt))
 

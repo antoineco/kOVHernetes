@@ -24,7 +24,12 @@ k8s_manifests = {
     'apiserver': res_gzip('data/k8s/manifests/kube-apiserver.yml'),
     'proxy': res_gzip('data/k8s/manifests/kube-proxy.yml'),
     'controller_manager': res_gzip('data/k8s/manifests/kube-controller-manager.yml'),
-    'scheduler': res_gzip('data/k8s/manifests/kube-scheduler.yml')
+    'scheduler': res_gzip('data/k8s/manifests/kube-scheduler.yml'),
+    'addon-manager': res_gzip('data/k8s/manifests/kube-addon-manager.yml')
+}
+k8s_addons = {
+    'dashboard': res_gzip('data/k8s/addons/dashboard.yml'),
+    'kubedns': res_gzip('data/k8s/addons/kubedns.yml')
 }
 kubeconfig = {
     'master': res_gzip('data/k8s/kubeconfig/master.yml'),
@@ -160,6 +165,33 @@ class UserData:
                 'mode': 416, # 0640
                 'contents': {
                     'source': 'data:,{}'.format(quote(k8s_manifests['controller_manager'])),
+                    'compression': 'gzip'
+                }
+            },
+            {
+                'filesystem': 'root',
+                'path': '/etc/kubernetes/manifests/kube-addon-manager.yml',
+                'mode': 416, # 0640
+                'contents': {
+                    'source': 'data:,{}'.format(quote(k8s_manifests['addon-manager'])),
+                    'compression': 'gzip'
+                }
+            },
+            {
+                'filesystem': 'root',
+                'path': '/etc/kubernetes/addons/kubedns.yml',
+                'mode': 416, # 0640
+                'contents': {
+                    'source': 'data:,{}'.format(quote(k8s_addons['kubedns'])),
+                    'compression': 'gzip'
+                }
+            },
+            {
+                'filesystem': 'root',
+                'path': '/etc/kubernetes/addons/dashboard.yml',
+                'mode': 416, # 0640
+                'contents': {
+                    'source': 'data:,{}'.format(quote(k8s_addons['dashboard'])),
                     'compression': 'gzip'
                 }
             },

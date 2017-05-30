@@ -129,13 +129,14 @@ kOVHernetes is a toy project written for testing purposes. **Use at your own ris
 
 ## Roadmap
 
-* [ ] Clusters listing
-* [ ] CNI networking
-* [ ] `kubectl` configuration
+* [ ] Secure apiserver -> kubelet communications
+* [ ] `list` command to display clusters
+* [ ] CNI networking with flannel
+* [ ] auto-generated local `kubectl` configuration
 * [ ] Master HA
 
 
-[logo]: images/logo.png
+[logo]: docs/images/logo.png
 [k8s]: https://kubernetes.io/
 [ovhcloud]: https://www.ovh.com/cloud/
 [cont-linux]: https://coreos.com/os/
@@ -145,5 +146,5 @@ kOVHernetes is a toy project written for testing purposes. **Use at your own ris
 [py-setuptools]: https://pypi.python.org/pypi/setuptools
 [py-cryptography]: https://pypi.python.org/pypi/cryptography
 [cryp-req]: https://cryptography.io/en/latest/installation/#building-cryptography-on-linux
-[dash]: images/project_dashboard.png
+[dash]: docs/images/project_dashboard.png
 [ovh]: https://www.ovh.com/

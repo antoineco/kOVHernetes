@@ -65,9 +65,6 @@ class CA:
         cert_subject.CN = cn
         cert.set_issuer(self.cert.get_issuer())
 
-        #X509v3 extensions:
-        #    X509v3 Subject Alternative Name: 
-        #        DNS:host-192-168-0-1
         cert_ext = []
         cert_ext.append(crypto.X509Extension(b'subjectKeyIdentifier', False, b'hash', cert))
         cert_ext.append(crypto.X509Extension(b'authorityKeyIdentifier', False, b'keyid,issuer', issuer=cert))
@@ -83,7 +80,7 @@ class CA:
 
         return key, cert
 
-    def create_server_pair(self, ou, cn):
+    def create_server_pair(self, ou, cn, san=[]):
         """Issue a X.509 server certificate"""
 
         # key
@@ -104,15 +101,13 @@ class CA:
         cert_subject.CN = cn
         cert.set_issuer(self.cert.get_issuer())
 
-        #X509v3 extensions:
-        #    X509v3 Subject Alternative Name: 
-        #        DNS:kubernetes.default.svc, DNS:kubernetes.default, DNS:kubernetes, DNS:localhost, IP Address:147.135.193.246, IP Address:10.0.0.1
         cert_ext = []
         cert_ext.append(crypto.X509Extension(b'subjectKeyIdentifier', False, b'hash', cert))
         cert_ext.append(crypto.X509Extension(b'authorityKeyIdentifier', False, b'keyid,issuer:always', issuer=cert))
         cert_ext.append(crypto.X509Extension(b'basicConstraints', False, b'CA:FALSE'))
         cert_ext.append(crypto.X509Extension(b'keyUsage', True, b'digitalSignature, keyEncipherment'))
         cert_ext.append(crypto.X509Extension(b'extendedKeyUsage', True, b'serverAuth'))
+        if san: cert_ext.append(crypto.X509Extension(b'subjectAltName', False, ','.join(san).encode()))
         cert.add_extensions(cert_ext)
 
         # sign request with CA key
