@@ -14,6 +14,7 @@ spec:
     - --kubeconfig=/etc/kubernetes/kubeconfig
     - --root-ca-file=/etc/kubernetes/ca/ca.pem
     - --service-account-private-key-file=/etc/kubernetes/tls/apiserver.key
+    - --address=127.0.0.1
     resources:
       requests:
         cpu: 200m
