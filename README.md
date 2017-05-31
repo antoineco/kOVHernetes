@@ -5,7 +5,7 @@
 kOVHernetes (*`kovh`*) is a command-line utility for managing [Kubernetes][k8s] clusters on the [OVH Cloud][ovhcloud]
 platform.
 
-It deploys cloud instances running the CoreOS [Container Linux][cont-linux] operating system with Kubernetes components
+It deploys cloud instances running the [CoreOS Container Linux][cont-linux] operating system with Kubernetes components
 pre-configured using [Ignition][ignition], including a [flannel][flannel] overlay network for containers.
 
 #### Contents
@@ -115,8 +115,10 @@ Alternatively, all settings can be overriden by environment variables using the 
 
 ## Usage
 
+* [Tutorial][tutorial]
 * [Command reference][cmd-ref]
 
+[tutorial]: docs/tutorial.md
 [cmd-ref]: docs/commands-reference.md
 
 ## Disclaimer
