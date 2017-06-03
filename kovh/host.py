@@ -9,7 +9,7 @@ from .userdata import UserData
 
 class Host:
 
-    def __init__(self, name, roles, pub_net, priv_net, client, ca):
+    def __init__(self, name, roles, pub_net, priv_net, client, ca, ip=None):
         self.name = name
         self.roles = roles
         self.flavor = client._flavor
@@ -17,9 +17,11 @@ class Host:
         self.region = client._region
         self.pub_net = pub_net
         self.priv_net = priv_net
-        self.image = get_coreos_images(client)[0]
-        self.userdata = UserData()
+        self.ip = ip
 
+        self.image = get_coreos_images(client)[0]
+
+        self.userdata = UserData()
         self.userdata.configure_coreos_metadata()
         self.userdata.gen_etc_hosts(client, priv_net)
 
@@ -30,21 +32,24 @@ class Host:
             ca_key = compress(dump_privatekey(FILETYPE_PEM, ca.key))
             ca_crt = compress(dump_certificate(FILETYPE_PEM, ca.cert))
 
-            # TLS pair for kube api server
-            # TODO: master IP happens to be always the first IP in subnet, but would be better not to assume that
+            san = [
+                'DNS:kubernetes.default.svc.cluster.local',
+                'DNS:kubernetes.default.svc',
+                'DNS:kubernetes.default',
+                'DNS:kubernetes',
+                'DNS:localhost',
+                'IP:10.0.0.1'
+            ]
+            if ip:
+                san.extend([
+                    'IP:{}'.format(ip),
+                    'DNS:{}'.format('host-' + ip.replace('.', '-'))
+                ])
+
             s_key, s_crt = ca.create_server_pair(
                 'k8s API server',
                 'apiserver',
-                [
-                    'DNS:kubernetes.default.svc.cluster.local',
-                    'DNS:kubernetes.default.svc',
-                    'DNS:kubernetes.default',
-                    'DNS:kubernetes',
-                    'DNS:localhost',
-                    'IP:10.0.0.1',
-                    'DNS:host-192-168-0-1',
-                    'IP:192.168.0.1'
-                ]
+                san
             )
             s_key_pem = compress(dump_privatekey(FILETYPE_PEM, s_key))
             s_crt_pem = compress(dump_certificate(FILETYPE_PEM, s_crt))
@@ -166,7 +171,8 @@ class Host:
                 },
                 {
                     # private
-                    'networkId': self.priv_net
+                    'networkId': self.priv_net,
+                    'ip': self.ip
                 }
             ],
             'region': self.region,

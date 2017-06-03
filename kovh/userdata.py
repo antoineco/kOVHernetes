@@ -1,6 +1,8 @@
-from gzip           import compress
-from urllib.parse   import quote
-from pkg_resources  import resource_string
+from gzip          import compress
+from urllib.parse  import quote
+from pkg_resources import resource_string, resource_stream
+from json          import loads, dumps
+from collections   import OrderedDict
 
 
 def res_plain(resource):
@@ -31,9 +33,8 @@ k8s_addons = {
     'dashboard': res_gzip('data/k8s/addons/dashboard.yml'),
     'kubedns': res_gzip('data/k8s/addons/kubedns.yml')
 }
-kubeconfig = {
-    'master': res_gzip('data/k8s/kubeconfig/master.yml'),
-    'node': res_gzip('data/k8s/kubeconfig/node.yml')
+misc = {
+    'kubeconfig': res_plain('data/k8s/kubeconfig.json')
 }
 
 
@@ -123,15 +124,6 @@ class UserData:
         ])
 
         self.add_files([
-            {
-                'filesystem': 'root',
-                'path': '/etc/kubernetes/kubeconfig',
-                'mode': 416, # 0640
-                'contents': {
-                    'source': 'data:,{}'.format(quote(kubeconfig['master'])),
-                    'compression': 'gzip'
-                }
-            },
             {
                 'filesystem': 'root',
                 'path': '/etc/kubernetes/manifests/kube-apiserver.yml',
@@ -227,15 +219,6 @@ class UserData:
         self.add_files([
             {
                 'filesystem': 'root',
-                'path': '/etc/kubernetes/kubeconfig',
-                'mode': 416, # 0640
-                'contents': {
-                    'source': 'data:,{}'.format(quote(kubeconfig['node'])),
-                    'compression': 'gzip'
-                }
-            },
-            {
-                'filesystem': 'root',
                 'path': '/etc/kubernetes/manifests/kube-proxy.yml',
                 'mode': 416, # 0640
                 'contents': {
@@ -244,6 +227,22 @@ class UserData:
                 }
             }
         ])
+
+    def gen_kubeconfig(self, server):
+        """Generate kubeconfig"""
+        kubeconfig = loads(misc['kubeconfig'].decode(), object_pairs_hook=OrderedDict)
+        kubeconfig['clusters'][0]['cluster']['server'] = 'https://' + server + ':6443'
+        kubeconfig = compress((dumps(kubeconfig, indent=4) + '\n').encode())
+
+        self.add_files({
+            'filesystem': 'root',
+            'path': '/etc/kubernetes/kubeconfig',
+            'mode': 416, # 0640
+            'contents': {
+                'source': 'data:,{}'.format(quote(kubeconfig)),
+                'compression': 'gzip'
+            }
+        })
 
     def gen_etc_hosts(self, client, net):
         """Generate /etc/hosts file containing all subnet hosts

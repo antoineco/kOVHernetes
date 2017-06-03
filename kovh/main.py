@@ -18,13 +18,14 @@ Commands:
 Use 'kovh <command> -h' for more information about a given command.
 """
 
-from docopt  import docopt
-from ovh     import APIError, ResourceNotFoundError
-from inspect import cleandoc
-from json    import dumps
-from sys     import exit
-from os.path import realpath
-from time    import sleep
+from docopt    import docopt
+from ovh       import APIError, ResourceNotFoundError
+from inspect   import cleandoc
+from json      import dumps
+from sys       import exit
+from os.path   import realpath
+from time      import sleep
+from ipaddress import IPv4Network
 
 from .       import __version__
 from .       import project
@@ -135,6 +136,10 @@ def project_command(client, args):
     command = args['<command>']
 
     # TODO: need a command dispatcher there
+    # https://github.com/ansible/ansible/blob/5553b20/lib/ansible/module_utils/basic.py#L776-L789
+
+    # TODO: catch APIError exceptions
+
     if command == 'show':
         print('Project: {}'.format(client._project if client._project else '-'))
         print('Region: {}'.format(client._region if client._region else '-'))
@@ -228,9 +233,11 @@ def create_command(client, args):
 
     print('\t[OK]')
 
+    subnet = IPv4Network('192.168.0.0/24')
+
     print('Creating subnet', end='', flush=True)
     try:
-        infra.create_subnet(client, priv_net['id'], '192.168.0.0/24')
+        infra.create_subnet(client, priv_net['id'], subnet)
     except APIError as e:
         print(e)
         exit(1)
@@ -241,27 +248,32 @@ def create_command(client, args):
     k8s_ca = CA()
     print('\t[OK]')
 
+    hosts = subnet.hosts()
+    for _ in range(10): next_ip = next(hosts)
+
     master = Host(
         name='{}:master'.format(name),
         roles=['master'],
         pub_net=pub_net_id,
         priv_net=priv_net['id'],
         client=client,
-        ca=k8s_ca
+        ca=k8s_ca,
+        ip=str(next_ip)
     )
+    master.userdata.gen_kubeconfig(master.ip)
 
     nodes = []
     for i in range(1, size):
-        nodes.append(
-            Host(
-                name='{}:node{:02}'.format(name, i),
-                roles=['node'],
-                pub_net=pub_net_id,
-                priv_net=priv_net['id'],
-                client=client,
-                ca=k8s_ca
-            )
+        node = Host(
+            name='{}:node{:02}'.format(name, i),
+            roles=['node'],
+            pub_net=pub_net_id,
+            priv_net=priv_net['id'],
+            client=client,
+            ca=k8s_ca
         )
+        node.userdata.gen_kubeconfig(master.ip)
+        nodes.append(node)
 
     print('Creating instances', end='', flush=True)
     try:
@@ -270,8 +282,6 @@ def create_command(client, args):
         print(e)
         exit(1)
 
-    # prevents instances from being created before neutron DHCP
-    if nodes: sleep(2)
     for node in nodes:
         try:
             client.post('/cloud/project/{}/instance'.format(client._project), **node.make_body())

@@ -1,6 +1,7 @@
 from ovh import Client as OVHClient
 from ovh.config import config
 
+
 class Client(OVHClient):
 
     def __init__(self, project=None, region=None, sshkey=None, flavor=None, **kwargs):

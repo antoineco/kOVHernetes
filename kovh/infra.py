@@ -1,5 +1,4 @@
-from ovh       import APIError, ResourceNotFoundError
-from ipaddress import IPv4Network
+from ovh import APIError, ResourceNotFoundError
 
 
 def create_priv_network(client, name, vlan):
@@ -16,15 +15,15 @@ def create_priv_network(client, name, vlan):
     else:
         return net
 
-def create_subnet(client, net_id, cidr):
-    hosts = tuple(IPv4Network(cidr).hosts())
+def create_subnet(client, net_id, subnet):
+    hosts = tuple(subnet.hosts())
 
     params = {
         'networkId': net_id,
         'dhcp': True,
         'noGateway': True,
         'region': client._region,
-        'network': cidr,
+        'network': str(subnet),
         'start': str(hosts[0]),
         'end': str(hosts[-1])
     }
