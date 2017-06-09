@@ -12,16 +12,15 @@ pre-configured using [Ignition][ignition], including a [flannel][flannel] overla
 
 1. [Prerequisites](#prerequisites)
 2. [Installation](#installation)
-3. [Configuration](#configuration)
-4. [Usage](#usage)
-5. [Disclaimer](#disclaimer)
-6. [Roadmap](#roadmap)
+3. [Documentation](#documentation)
+4. [Disclaimer](#disclaimer)
+5. [Roadmap](#roadmap)
 
 ## Prerequisites
 
 ### :warning: CoreOS Container Linux image
 
-The *Container Linux* image available in the OVH image service as of 05/28/2017 is outdated and misses features required
+The *Container Linux* image available in the OVH image service as of 06/07/2017 is outdated and misses features required
 by the `kovh` client (Ignition OpenStack compatibility, *rkt* wrapper scripts).
 
 Until this problem is tackled by OVH, please follow the instructions at [Running CoreOS Container Linux on
@@ -32,7 +31,7 @@ OpenStack][coreos-openstack] to download the latest Stable release, then upload 
     --disk-format 'qcow2' \
     --file 'coreos_production_openstack_image.img' \
     --property os-distro='container' \
-    --property os-version='1353.7.0' \
+    --property os-version='1353.8.0' \
     --property image_original_user='core' \
     'Container Linux Stable'
 ```
@@ -62,63 +61,19 @@ Additionally on **Linux**:
 Run the following command inside the repository to install the project dependencies and the `kovh` executable:
 
 ```sh
-❯ python setup.py install
+❯ python3 setup.py install
 ```
 
-## Configuration
+## Documentation
 
-### .conf files
-
-The CLI configuration is read from the following files (in this order):
-
-* `kovh.conf` (current directory)
-* `ovh.conf` (current directory)
-* `~/.ovh.conf` (home directory)
-* `/etc/ovh.conf` (system-wide)
-
-Copy the sample `kovh.conf.example` file to one of these locations and edit it with the following settings:
-
-1. `application_key`, `application_secret`
-
-*Application* kOVHernetes uses to interact with the API. Requested once at https://api.ovh.com/createApp/. The
-application is tied to your personal account and accepts any name/description.
-
-2. `consumer_key`
-
-Grants API access to the *Application*. Obtained using the following command after adding the previous information:
-
-```sh
-❯ kovh auth renew
-```
-
-3. `project`, `sshkey`, `region`, `flavor`
-
-*Project (service)*, *SSH key*, *region* and *flavor (instance type)* IDs. Obtained using the following commands
-respectively:
-
-```sh
-❯ kovh project services
-❯ kovh project keys
-❯ kovh project regions
-❯ kovh project flavors
-```
-
-### Environment variables
-
-Alternatively, all settings can be overriden by environment variables using the format `OVH_<uppercase:setting>`.
-
-```sh
-# example
-❯ export OVH_PROJECT=6f39672f2931ed50922041972b355ab8
-❯ kovh project instances
-```
-
-## Usage
-
+* [Configuration][config]
 * [Tutorial][tutorial]
+* [Cluster architecture][arch]
 * [Command reference][cmd-ref]
 
+[config]: docs/configuration.md
 [tutorial]: docs/tutorial.md
+[arch]: docs/architecture.md
 [cmd-ref]: docs/commands-reference.md
 
 ## Disclaimer
@@ -131,11 +86,13 @@ kOVHernetes is a toy project written for testing purposes. **Use at your own ris
 
 ## Roadmap
 
+* [ ] RBAC-ready X.509 certs
 * [ ] Secure apiserver -> kubelet communications
+* [ ] Secure apiserver/flannel -> etcd communications
 * [ ] `list` command to display clusters
-* [ ] CNI networking with flannel
 * [ ] auto-generated local `kubectl` configuration
 * [ ] Master HA
+* [ ] CNI networking
 
 
 [logo]: docs/images/logo.png

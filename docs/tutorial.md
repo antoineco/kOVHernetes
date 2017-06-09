@@ -3,7 +3,7 @@
 This is a good place to start if you want to understand the basics of the `kovh` utility and make sure your Kubernetes
 clusters are working as intended. It also describes some very basic Kubernetes concepts in order to get you started.
 
-*This tutorial assumes that a project is already configured as described in the README*
+*This tutorial assumes that a project is already configured as described on the [Configuration page][config]*
 
 #### Contents
 
@@ -41,9 +41,9 @@ You can see the instances being created using the `project instances` subcommand
 ❯ kovh project instances
 
 ID                                    NAME                      STATUS  REGION  IP                         
-ccdf2160-6481-4262-b4d1-4d73574d96c5  kovh:cursedfleet::node02  BUILD   GRA3    147.135.193.252,192.168.0.4
-2299a23e-e116-4380-af49-0fa91e9170dc  kovh:cursedfleet::node01  BUILD   GRA3    147.135.193.25,192.168.0.3 
-17c23e1f-4c1c-4dd2-a2a8-f7cd9871eb0a  kovh:cursedfleet::master  ACTIVE  GRA3    147.135.193.248,192.168.0.1
+ccdf2160-6481-4262-b4d1-4d73574d96c5  kovh:cursedfleet::node02  BUILD   GRA3    147.135.193.252,192.168.0.12
+2299a23e-e116-4380-af49-0fa91e9170dc  kovh:cursedfleet::node01  BUILD   GRA3    147.135.193.25,192.168.0.11
+17c23e1f-4c1c-4dd2-a2a8-f7cd9871eb0a  kovh:cursedfleet::master  ACTIVE  GRA3    147.135.193.248,192.168.0.10
 ```
 
 A few things should be noted before jumping to the next steps:
@@ -52,6 +52,8 @@ A few things should be noted before jumping to the next steps:
 instance of the [etcd][etcd] key-value store, together with the "node" Kubernetes components (kubelet, proxy). As
 deployed with kOVHernetes, the `master` instance is effectively both the cluster master **and** a worker node.
 * The `node*` instances run only the "node" Kubernetes components (kubelet, proxy).
+
+*For more details about the cluster architecture, please check the [Architecture page][arch]*
 
 ## Look around
 
@@ -304,7 +306,9 @@ Destroying private network 'kovh:cursedfleet:'	[OK]
 ```
 
 
+[config]: configuration.md
 [etcd]: https://coreos.com/etcd
+[arch]: architecture.md
 [pod]: https://kubernetes.io/docs/concepts/workloads/pods/pod/
 [namespace]: https://kubernetes.io/docs/concepts/overview/working-with-objects/namespaces/
 [service]: https://kubernetes.io/docs/concepts/services-networking/service/
