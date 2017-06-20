@@ -11,6 +11,7 @@ spec:
     image: quay.io/coreos/hyperkube:v1.6.6_coreos.0
     command:
     - kube-apiserver
+    - --apiserver-count=1
     - --etcd-servers=http://127.0.0.1:2379
     - --service-cluster-ip-range=10.0.0.0/24
     - --admission-control=NamespaceLifecycle,LimitRanger,ServiceAccount,DefaultStorageClass,ResourceQuota

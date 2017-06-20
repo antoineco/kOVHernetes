@@ -1,6 +1,6 @@
 from gzip          import compress
 from urllib.parse  import quote
-from pkg_resources import resource_string, resource_stream
+from pkg_resources import resource_string
 from json          import loads, dumps
 from collections   import OrderedDict
 
@@ -51,33 +51,30 @@ class UserData:
         }
 
     def add_files(self, definition):
-        """Add element(s) to node storage['files']"""
+        """Add elements to node storage['files']"""
 
         if not 'files' in self.data['storage']:
             self.data['storage']['files'] = []
 
-        if isinstance(definition, dict):
-            self.data['storage']['files'].append(definition)
-        elif isinstance(definition, list):
+        if isinstance(definition, list):
             self.data['storage']['files'].extend(definition)
         else:
-            raise TypeError("'definition must be a list or a dict, not '{}'".format(type(definition)))
+            raise TypeError("'definition must be a list, not '{}'".format(type(definition)))
 
     def add_sunits(self, definition):
-        """Add element(s) to node systemd['units']"""
+        """Add elements to node systemd['units']"""
 
         if not 'units' in self.data['systemd']:
             self.data['systemd']['units'] = []
 
-        if isinstance(definition, dict):
-            self.data['systemd']['units'].append(definition)
-        elif isinstance(definition, list):
+        if isinstance(definition, list):
             self.data['systemd']['units'].extend(definition)
         else:
-            raise TypeError("'definition must be a list or a dict, not '{}'".format(type(definition)))
+            raise TypeError("'definition must be a list, not '{}'".format(type(definition)))
 
     def configure_coreos_metadata(self):
         """Generate drop-ins for coreos-metadata"""
+
         self.add_sunits([
             {
                 'name': 'coreos-metadata.service',
@@ -97,7 +94,7 @@ class UserData:
         ])
 
     def gen_kubemaster_data(self):
-        """Generate data deployed on all Kubernetes masters"""
+        """Generate data deployed to all Kubernetes masters"""
 
         self.add_sunits([
             {
@@ -106,14 +103,6 @@ class UserData:
                 'dropins': [{
                     'name': '10-cluster.conf',
                     'contents': sunits['etcd'].decode()
-                }]
-            },
-            {
-                'name': 'flanneld.service',
-                'enable': True,
-                'dropins': [{
-                    'name': '10-network-config.conf',
-                    'contents': sunits['flanneld_netconf'].decode()
                 }]
             },
             {
@@ -192,23 +181,15 @@ class UserData:
                 'path': '/opt/bin/kubectl',
                 'mode': 493, # 0755
                 'contents': {
-                    'source': 'https://storage.googleapis.com/kubernetes-release/release/v1.6.4/bin/linux/amd64/kubectl'
+                    'source': 'https://storage.googleapis.com/kubernetes-release/release/v1.6.6/bin/linux/amd64/kubectl'
                 }
             }
         ])
 
     def gen_kubenode_data(self):
-        """Generate data deployed on all Kubernetes nodes"""
+        """Generate data deployed to all Kubernetes nodes"""
 
         self.add_sunits([
-            {
-                'name': 'flanneld.service',
-                'enable': True,
-                'dropins': [{
-                    'name': '10-client.conf',
-                    'contents': sunits['flanneld'].decode()
-                }]
-            },
             {
                 'name': 'kubelet.service',
                 'enable': True,
@@ -228,21 +209,53 @@ class UserData:
             }
         ])
 
-    def gen_kubeconfig(self, server):
+    def gen_kubeconfig(self, server=None):
         """Generate kubeconfig"""
-        kubeconfig = loads(misc['kubeconfig'].decode(), object_pairs_hook=OrderedDict)
-        kubeconfig['clusters'][0]['cluster']['server'] = 'https://' + server + ':6443'
-        kubeconfig = compress((dumps(kubeconfig, indent=4) + '\n').encode())
 
-        self.add_files({
-            'filesystem': 'root',
-            'path': '/etc/kubernetes/kubeconfig',
-            'mode': 416, # 0640
-            'contents': {
-                'source': 'data:,{}'.format(quote(kubeconfig)),
-                'compression': 'gzip'
+        if server:
+            kubeconfig = loads(misc['kubeconfig'].decode(), object_pairs_hook=OrderedDict)
+            kubeconfig['clusters'][0]['cluster']['server'] = 'https://' + server + ':6443'
+            kubeconfig = compress((dumps(kubeconfig, indent=4) + '\n').encode())
+        else:
+            kubeconfig = compress(misc['kubeconfig'])
+
+        self.add_files([
+            {
+                'filesystem': 'root',
+                'path': '/etc/kubernetes/kubeconfig',
+                'mode': 416, # 0640
+                'contents': {
+                    'source': 'data:,{}'.format(quote(kubeconfig)),
+                    'compression': 'gzip'
+                }
             }
-        })
+        ])
+
+    def gen_flanneld_config(self, server=None, netconf=False):
+        """Generate flanneld config"""
+
+        fld_unit = {
+            'name': 'flanneld.service',
+            'enable': True
+        }
+
+        if server or netconf:
+            fld_unit['dropins'] = []
+
+        if server:
+            fld_clconf = sunits['flanneld'].decode().replace('localhost', server)
+            fld_unit['dropins'].append({
+                'name': '10-client.conf',
+                'contents': fld_clconf
+            })
+
+        if netconf:
+            fld_unit['dropins'].append({
+                'name': '10-network-config.conf',
+                'contents': sunits['flanneld_netconf'].decode()
+            })
+
+        self.add_sunits([fld_unit])
 
     def gen_etc_hosts(self, client, net):
         """Generate /etc/hosts file containing all subnet hosts
@@ -259,12 +272,14 @@ class UserData:
              '\n'.join(['{}\t{}'.format(ip, 'host-'+str(ip).replace('.', '-')) for ip in hosts]) + '\n').encode()
         )
 
-        self.add_files({
-            'filesystem': 'root',
-            'path': '/etc/hosts',
-            'mode': 420, # 0644
-            'contents': {
-                'source': 'data:,{}'.format(quote(hosts_content)),
-                'compression': 'gzip'
+        self.add_files([
+            {
+                'filesystem': 'root',
+                'path': '/etc/hosts',
+                'mode': 420, # 0644
+                'contents': {
+                    'source': 'data:,{}'.format(quote(hosts_content)),
+                    'compression': 'gzip'
+                }
             }
-        })
+        ])

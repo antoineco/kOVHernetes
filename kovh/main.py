@@ -260,7 +260,8 @@ def create_command(client, args):
         ca=k8s_ca,
         ip=str(next_ip)
     )
-    master.userdata.gen_kubeconfig(master.ip)
+    master.userdata.gen_kubeconfig()
+    master.userdata.gen_flanneld_config(netconf=True)
 
     nodes = []
     for i in range(1, size):
@@ -273,6 +274,7 @@ def create_command(client, args):
             ca=k8s_ca
         )
         node.userdata.gen_kubeconfig(master.ip)
+        node.userdata.gen_flanneld_config(master.ip)
         nodes.append(node)
 
     print('Creating instances', end='', flush=True)
