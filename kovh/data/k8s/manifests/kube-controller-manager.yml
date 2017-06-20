@@ -8,7 +8,7 @@ spec:
   hostNetwork: true
   containers:
   - name: kube-controller-manager
-    image: quay.io/coreos/hyperkube:v1.6.4_coreos.0
+    image: quay.io/coreos/hyperkube:v1.6.6_coreos.0
     command:
     - kube-controller-manager
     - --kubeconfig=/etc/kubernetes/kubeconfig
