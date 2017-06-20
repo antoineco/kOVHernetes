@@ -30,7 +30,19 @@ spec:
     - mountPath: /etc/kubernetes/kubeconfig
       name: kubeconfig
       readOnly: true
+    - mountPath: /etc/kubernetes/tls
+      name: tls-certs
+      readOnly: true
+    - mountPath: /etc/kubernetes/ca/ca.pem
+      name: ca-cert
+      readOnly: true
   volumes:
   - hostPath:
       path: /etc/kubernetes/kubeconfig
     name: kubeconfig
+  - hostPath:
+      path: /etc/kubernetes/tls
+    name: tls-certs
+  - hostPath:
+      path: /etc/kubernetes/ca/ca.pem
+    name: ca-cert

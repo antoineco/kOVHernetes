@@ -32,8 +32,8 @@ spec:
     - mountPath: /etc/kubernetes/kubeconfig
       name: kubeconfig
       readOnly: true
-    - mountPath: /etc/kubernetes/tls/apiserver.key
-      name: tls-apiserver-key
+    - mountPath: /etc/kubernetes/tls
+      name: tls-certs
       readOnly: true
     - mountPath: /etc/kubernetes/ca
       name: ca-certs
@@ -43,8 +43,8 @@ spec:
       path: /etc/kubernetes/kubeconfig
     name: kubeconfig
   - hostPath:
-      path: /etc/kubernetes/tls/apiserver.key
-    name: tls-apiserver-key
+      path: /etc/kubernetes/tls
+    name: tls-certs
   - hostPath:
       path: /etc/kubernetes/ca
     name: ca-certs
