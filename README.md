@@ -20,7 +20,7 @@ pre-configured using [Ignition][ignition], including a [flannel][flannel] overla
 
 ### :warning: CoreOS Container Linux image
 
-The *Container Linux* image available in the OVH image service as of 06/07/2017 is outdated and misses features required
+The *Container Linux* image available in the OVH image service as of 06/21/2017 is outdated and misses features required
 by the `kovh` client (Ignition OpenStack compatibility, *rkt* wrapper scripts).
 
 Until this problem is tackled by OVH, please follow the instructions at [Running CoreOS Container Linux on
@@ -31,7 +31,7 @@ OpenStack][coreos-openstack] to download the latest Stable release, then upload 
     --disk-format 'qcow2' \
     --file 'coreos_production_openstack_image.img' \
     --property os-distro='container' \
-    --property os-version='1353.8.0' \
+    --property os-version='1409.2.0' \
     --property image_original_user='core' \
     'Container Linux Stable'
 ```
@@ -88,7 +88,6 @@ kOVHernetes is a toy project written for testing purposes. **Use at your own ris
 
 * [ ] RBAC-ready X.509 certs
 * [ ] Secure apiserver -> kubelet communications
-* [ ] Secure apiserver/flannel -> etcd communications
 * [ ] `list` command to display clusters
 * [ ] auto-generated local `kubectl` configuration
 * [ ] Master HA

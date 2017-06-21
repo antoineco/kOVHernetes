@@ -63,7 +63,7 @@ SSH key configured in your project. Let's start by logging in to the `master` in
 ```
 ❯ ssh core@147.135.193.248
 
-Container Linux by CoreOS stable (1353.7.0)
+Container Linux by CoreOS stable (1409.2.0)
 core@host-192-168-0-1 ~ $
 ```
 
@@ -105,7 +105,7 @@ containerized!).
 core@host-192-168-0-1 ~ $ rkt list
 
 UUID      APP        IMAGE NAME                                STATE
-079c62f6  hyperkube  quay.io/coreos/hyperkube:v1.6.4_coreos.0  running
+079c62f6  hyperkube  quay.io/coreos/hyperkube:v1.6.6_coreos.1  running
 154b06de  flannel    quay.io/coreos/flannel:v0.7.0             running
 cd973167  flannel    quay.io/coreos/flannel:v0.7.0             exited
 d704531f  etcd       quay.io/coreos/etcd:v3.0.10               running
@@ -149,9 +149,9 @@ registered with the API server.
 core@host-192-168-0-1 ~ $ kubectl get nodes
 
 NAME               STATUS   AGE   VERSION
-host-192-168-0-1   Ready    8m    v1.6.4+coreos.0
-host-192-168-0-3   Ready    8m    v1.6.4+coreos.0
-host-192-168-0-4   Ready    8m    v1.6.4+coreos.0
+host-192-168-0-1   Ready    8m    v1.6.6+coreos.1
+host-192-168-0-3   Ready    8m    v1.6.6+coreos.1
+host-192-168-0-4   Ready    8m    v1.6.6+coreos.1
 ```
 
 It has some default [Namespaces][namespace] pre-created.

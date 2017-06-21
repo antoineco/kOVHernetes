@@ -8,16 +8,22 @@ spec:
   hostNetwork: true
   containers:
   - name: kube-apiserver
-    image: quay.io/coreos/hyperkube:v1.6.6_coreos.0
+    image: quay.io/coreos/hyperkube:v1.6.6_coreos.1
     command:
     - kube-apiserver
-    - --apiserver-count=1
-    - --etcd-servers=http://127.0.0.1:2379
-    - --service-cluster-ip-range=10.0.0.0/24
     - --admission-control=NamespaceLifecycle,LimitRanger,ServiceAccount,DefaultStorageClass,ResourceQuota
-    - --tls-ca-file=/etc/kubernetes/ca/ca.pem
-    - --client-ca-file=/etc/kubernetes/ca/ca.pem
     - --allow-privileged
+    - --anonymous-auth=false
+    - --apiserver-count=1
+    - --client-ca-file=/tls/ca.pem
+    - --etcd-cafile=/tls/ca.pem
+    - --etcd-certfile=/tls/etcd_c.crt
+    - --etcd-keyfile=/tls/etcd_c.key
+    - --etcd-servers=https://localhost:2379
+    - --service-cluster-ip-range=10.0.0.0/24
+    - --tls-ca-file=/tls/ca.pem
+    - --tls-cert-file=/tls/k8s_s.crt
+    - --tls-private-key-file=/tls/k8s_s.key
     ports:
     - containerPort: 8080
       name: http
@@ -29,16 +35,10 @@ spec:
       initialDelaySeconds: 15
       timeoutSeconds: 15
     volumeMounts:
-    - mountPath: /var/run/kubernetes
+    - mountPath: /tls
       name: tls-certs
-      readOnly: true
-    - mountPath: /etc/kubernetes/ca
-      name: ca-certs
       readOnly: true
   volumes:
   - hostPath:
       path: /etc/kubernetes/tls
     name: tls-certs
-  - hostPath:
-      path: /etc/kubernetes/ca
-    name: ca-certs

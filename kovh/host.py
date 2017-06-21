@@ -1,6 +1,5 @@
 from json           import dumps
 from OpenSSL.crypto import dump_certificate, dump_privatekey, FILETYPE_PEM
-from gzip           import compress
 from urllib.parse   import quote
 
 from .project  import get_coreos_images
@@ -25,14 +24,73 @@ class Host:
         self.userdata.configure_coreos_metadata()
         self.userdata.gen_etc_hosts(client, priv_net)
 
+        if any([r in self.roles for r in ['master', 'node']]):
+            self.userdata.gen_kube_data()
+
+            # Dump X.509 CA cert
+            ca_crt = dump_certificate(FILETYPE_PEM, ca.cert)
+
+            # TLS client pair for kube components
+            kc_key, kc_crt = ca.create_client_pair('system:nodes', 'k8s-client')
+            kc_key_pem = dump_privatekey(FILETYPE_PEM, kc_key)
+            kc_crt_pem = dump_certificate(FILETYPE_PEM, kc_crt)
+
+            # TLS client pair for etcd
+            ec_key, ec_crt = ca.create_client_pair('etcd', 'etcd-client')
+            ec_key_pem = dump_privatekey(FILETYPE_PEM, ec_key)
+            ec_crt_pem = dump_certificate(FILETYPE_PEM, ec_crt)
+
+            self.userdata.add_files ([
+                {
+                    'filesystem': 'root',
+                    'path': '/etc/kubernetes/tls/ca.pem',
+                    'mode': 416, # 0640
+                    'contents': {
+                        'source': 'data:,{}'.format(quote(ca_crt))
+                    }
+                },
+                {
+                    'filesystem': 'root',
+                    'path': '/etc/kubernetes/tls/k8s_c.key',
+                    'mode': 384, # 0600
+                    'contents': {
+                        'source': 'data:,{}'.format(quote(kc_key_pem))
+                    }
+                },
+                {
+                    'filesystem': 'root',
+                    'path': '/etc/kubernetes/tls/k8s_c.crt',
+                    'mode': 416, # 0640
+                    'contents': {
+                        'source': 'data:,{}'.format(quote(kc_crt_pem))
+                    }
+                },
+                {
+                    'filesystem': 'root',
+                    'path': '/etc/kubernetes/tls/etcd_c.key',
+                    'mode': 384, # 0600
+                    'contents': {
+                        'source': 'data:,{}'.format(quote(ec_key_pem))
+                    }
+                },
+                {
+                    'filesystem': 'root',
+                    'path': '/etc/kubernetes/tls/etcd_c.crt',
+                    'mode': 416, # 0640
+                    'contents': {
+                        'source': 'data:,{}'.format(quote(ec_crt_pem))
+                    }
+                }
+            ])
+
         if 'master' in self.roles:
             self.userdata.gen_kubemaster_data()
 
-            # Dump X.509 CA objects
-            ca_key = compress(dump_privatekey(FILETYPE_PEM, ca.key))
-            ca_crt = compress(dump_certificate(FILETYPE_PEM, ca.cert))
+            # Dump X.509 CA key
+            ca_key = dump_privatekey(FILETYPE_PEM, ca.key)
 
-            san = [
+            # TLS server pair for kube API server
+            ks_san = [
                 'DNS:kubernetes.default.svc.cluster.local',
                 'DNS:kubernetes.default.svc',
                 'DNS:kubernetes.default',
@@ -41,121 +99,72 @@ class Host:
                 'IP:10.0.0.1'
             ]
             if ip:
-                san.extend([
+                ks_san.extend([
                     'IP:{}'.format(ip),
                     'DNS:{}'.format('host-' + ip.replace('.', '-'))
                 ])
 
-            s_key, s_crt = ca.create_server_pair(
-                'k8s API server',
-                'apiserver',
-                san
-            )
-            s_key_pem = compress(dump_privatekey(FILETYPE_PEM, s_key))
-            s_crt_pem = compress(dump_certificate(FILETYPE_PEM, s_crt))
+            ks_key, ks_crt = ca.create_server_pair('Kubernetes', 'apiserver', ks_san)
+            ks_key_pem = dump_privatekey(FILETYPE_PEM, ks_key)
+            ks_crt_pem = dump_certificate(FILETYPE_PEM, ks_crt)
 
-            # TLS pair for kube components
-            c_key, c_crt = ca.create_client_pair('k8s components', 'master')
-            c_key_pem = compress(dump_privatekey(FILETYPE_PEM, c_key))
-            c_crt_pem = compress(dump_certificate(FILETYPE_PEM, c_crt))
+            # TLS server pair for etcd
+            es_san = ['DNS:localhost']
+            if ip:
+                es_san.append('IP:{}'.format(ip))
+
+            es_key, es_crt = ca.create_server_pair('etcd', 'master', es_san)
+            es_key_pem = dump_privatekey(FILETYPE_PEM, es_key)
+            es_crt_pem = dump_certificate(FILETYPE_PEM, es_crt)
 
             self.userdata.add_files ([
                 {
                     'filesystem': 'root',
-                    'path': '/etc/kubernetes/ca/ca.key',
+                    'path': '/etc/kubernetes/tls/ca.key',
                     'mode': 384, # 0600
                     'contents': {
-                        'source': 'data:,{}'.format(quote(ca_key)),
-                        'compression': 'gzip'
+                        'source': 'data:,{}'.format(quote(ca_key))
                     }
                 },
                 {
                     'filesystem': 'root',
-                    'path': '/etc/kubernetes/ca/ca.pem',
-                    'mode': 416, # 0640
-                    'contents': {
-                        'source': 'data:,{}'.format(quote(ca_crt)),
-                        'compression': 'gzip'
-                    }
-                },
-                {
-                    'filesystem': 'root',
-                    'path': '/etc/kubernetes/tls/apiserver.key',
+                    'path': '/etc/kubernetes/tls/k8s_s.key',
                     'mode': 384, # 0600
                     'contents': {
-                        'source': 'data:,{}'.format(quote(s_key_pem)),
-                        'compression': 'gzip'
+                        'source': 'data:,{}'.format(quote(ks_key_pem))
                     }
                 },
                 {
                     'filesystem': 'root',
-                    'path': '/etc/kubernetes/tls/apiserver.crt',
+                    'path': '/etc/kubernetes/tls/k8s_s.crt',
                     'mode': 416, # 0640
                     'contents': {
-                        'source': 'data:,{}'.format(quote(s_crt_pem)),
-                        'compression': 'gzip'
+                        'source': 'data:,{}'.format(quote(ks_crt_pem))
                     }
                 },
                 {
                     'filesystem': 'root',
-                    'path': '/etc/kubernetes/tls/client.key',
+                    'path': '/etc/kubernetes/tls/etcd_s.key',
                     'mode': 384, # 0600
+                    'user': {
+                        'id': 232 # etcd user id
+                    },
                     'contents': {
-                        'source': 'data:,{}'.format(quote(c_key_pem)),
-                        'compression': 'gzip'
+                        'source': 'data:,{}'.format(quote(es_key_pem))
                     }
                 },
                 {
                     'filesystem': 'root',
-                    'path': '/etc/kubernetes/tls/client.crt',
+                    'path': '/etc/kubernetes/tls/etcd_s.crt',
                     'mode': 416, # 0640
                     'contents': {
-                        'source': 'data:,{}'.format(quote(c_crt_pem)),
-                        'compression': 'gzip'
+                        'source': 'data:,{}'.format(quote(es_crt_pem))
                     }
                 }
             ])
 
         if 'node' in self.roles:
             self.userdata.gen_kubenode_data()
-
-            # Dump X.509 CA objects
-            ca_crt = compress(dump_certificate(FILETYPE_PEM, ca.cert))
-
-            # TLS pair for kube components
-            c_key, c_crt = ca.create_client_pair('k8s components', 'node')
-            c_key_pem = compress(dump_privatekey(FILETYPE_PEM, c_key))
-            c_crt_pem = compress(dump_certificate(FILETYPE_PEM, c_crt))
-
-            self.userdata.add_files ([
-                {
-                    'filesystem': 'root',
-                    'path': '/etc/kubernetes/ca/ca.pem',
-                    'mode': 416, # 0640
-                    'contents': {
-                        'source': 'data:,{}'.format(quote(ca_crt)),
-                        'compression': 'gzip'
-                    }
-                },
-                {
-                    'filesystem': 'root',
-                    'path': '/etc/kubernetes/tls/client.key',
-                    'mode': 384, # 0600
-                    'contents': {
-                        'source': 'data:,{}'.format(quote(c_key_pem)),
-                        'compression': 'gzip'
-                    }
-                },
-                {
-                    'filesystem': 'root',
-                    'path': '/etc/kubernetes/tls/client.crt',
-                    'mode': 416, # 0640
-                    'contents': {
-                        'source': 'data:,{}'.format(quote(c_crt_pem)),
-                        'compression': 'gzip'
-                    }
-                }
-            ])
 
     def make_body(self):
         body = {

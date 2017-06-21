@@ -76,13 +76,13 @@ interactions:
 :key: &nbsp; X.509 auth  
 :o: &nbsp; Work in progress
 
-| *Client* / *Server* | kube-api | kubelet | kube-&ast; | etcd | flannel |
-|:-------------------:|:--------:|:-------:|:----------:|:----:|:-------:|
-| **kube-api**        | -        | :o:     |            | :o:  |         |
-| **kubelet**         | :key:    | -       |            |      |         |
-| **kube-&ast;**      | :key:    |         | -          |      |         |
-| **etcd**            |          |         |            | -    |         |
-| **flannel**         |          |         |            | :o:  | -       |
+| *Client* / *Server* | kube-api | kubelet | kube-&ast; | etcd  | flannel |
+|:-------------------:|:--------:|:-------:|:----------:|:-----:|:-------:|
+| **kube-api**        | -        | :o:     |            | :key: |         |
+| **kubelet**         | :key:    | -       |            |       |         |
+| **kube-&ast;**      | :key:    |         | -          |       |         |
+| **etcd**            |          |         |            | -     |         |
+| **flannel**         |          |         |            | :key: | -       |
 
 \* *`kube-*` includes `kube-scheduler`, `kube-controller-manager` and `kube-proxy`*
 
@@ -104,9 +104,9 @@ ABAC, ...).
 
 #### etcd
 
-The etcd v3 API is currently open, but its access it restricted to the internal network interface. [Client certificate
-authentication][etcd-auth] will be enabled in the near future (see previous section), however the [v3 authorization
-mechanism][etcd-v3auth] is still in a design phase.
+While [client certificate authentication][etcd-auth] is enforced for both client and peer communications (see above),
+authenticated users are systematically granted full access to the etcd v3 API. The [v3 authorization
+mechanism][etcd-v3auth] is still in a design phase upstream.
 
 
 [kovh-arch]: images/kovh_arch.png

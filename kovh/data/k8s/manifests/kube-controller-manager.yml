@@ -8,13 +8,16 @@ spec:
   hostNetwork: true
   containers:
   - name: kube-controller-manager
-    image: quay.io/coreos/hyperkube:v1.6.6_coreos.0
+    image: quay.io/coreos/hyperkube:v1.6.6_coreos.1
     command:
     - kube-controller-manager
-    - --kubeconfig=/etc/kubernetes/kubeconfig
-    - --root-ca-file=/etc/kubernetes/ca/ca.pem
-    - --service-account-private-key-file=/etc/kubernetes/tls/apiserver.key
     - --address=127.0.0.1
+    - --cluster-signing-cert-file=/tls/ca.pem
+    - --cluster-signing-key-file=/tls/ca.key
+    - --kubeconfig=/kubeconfig
+    - --root-ca-file=/tls/ca.pem
+    - --service-account-private-key-file=/tls/k8s_s.key
+    - --service-cluster-ip-range=10.0.0.0/24
     resources:
       requests:
         cpu: 200m
@@ -29,14 +32,11 @@ spec:
       initialDelaySeconds: 15
       timeoutSeconds: 15
     volumeMounts:
-    - mountPath: /etc/kubernetes/kubeconfig
+    - mountPath: /kubeconfig
       name: kubeconfig
       readOnly: true
-    - mountPath: /etc/kubernetes/tls
+    - mountPath: /tls
       name: tls-certs
-      readOnly: true
-    - mountPath: /etc/kubernetes/ca
-      name: ca-certs
       readOnly: true
   volumes:
   - hostPath:
@@ -45,6 +45,3 @@ spec:
   - hostPath:
       path: /etc/kubernetes/tls
     name: tls-certs
-  - hostPath:
-      path: /etc/kubernetes/ca
-    name: ca-certs

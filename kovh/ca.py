@@ -44,7 +44,7 @@ class CA:
         self.cert = cert
         self.key = key
 
-    def create_client_pair(self, ou, cn):
+    def create_client_pair(self, o, cn):
         """Issue a X.509 client certificate"""
 
         # key
@@ -60,8 +60,8 @@ class CA:
         cert.gmtime_adj_notAfter(365*24*60*60)
 
         cert_subject = cert.get_subject()
-        cert_subject.O = 'kOVHernetes'
-        cert_subject.OU = 'kOVHernetes {}'.format(ou)
+        cert_subject.O = o
+        cert_subject.OU = 'kOVHernetes'
         cert_subject.CN = cn
         cert.set_issuer(self.cert.get_issuer())
 
@@ -80,7 +80,7 @@ class CA:
 
         return key, cert
 
-    def create_server_pair(self, ou, cn, san=[]):
+    def create_server_pair(self, o, cn, san=[]):
         """Issue a X.509 server certificate"""
 
         # key
@@ -96,8 +96,8 @@ class CA:
         cert.gmtime_adj_notAfter(365*24*60*60)
 
         cert_subject = cert.get_subject()
-        cert_subject.O = 'kOVHernetes'
-        cert_subject.OU = 'kOVHernetes {}'.format(ou)
+        cert_subject.O = o
+        cert_subject.OU = 'kOVHernetes'
         cert_subject.CN = cn
         cert.set_issuer(self.cert.get_issuer())
 

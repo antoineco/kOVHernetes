@@ -14,27 +14,25 @@ def res_gzip(resource):
     return compress(res_plain(resource))
 
 # Reusable data from static files
-sunits = {
-    'coremeta': res_plain('data/systemd/coreos-metadata.service.d/10-provider.conf'),
-    'coremetassh': res_plain('data/systemd/coreos-metadata-sshkeys@.service.d/10-provider.conf'),
-    'kubelet': res_plain('data/systemd/kubelet.service'),
-    'etcd': res_plain('data/systemd/etcd-member.service.d/10-cluster.conf'),
-    'flanneld': res_plain('data/systemd/flanneld.service.d/10-client.conf'),
-    'flanneld_netconf': res_plain('data/systemd/flanneld.service.d/10-network-config.conf')
-}
-k8s_manifests = {
-    'apiserver': res_gzip('data/k8s/manifests/kube-apiserver.yml'),
-    'proxy': res_gzip('data/k8s/manifests/kube-proxy.yml'),
-    'controller_manager': res_gzip('data/k8s/manifests/kube-controller-manager.yml'),
-    'scheduler': res_gzip('data/k8s/manifests/kube-scheduler.yml'),
-    'addon-manager': res_gzip('data/k8s/manifests/kube-addon-manager.yml')
-}
-k8s_addons = {
-    'dashboard': res_gzip('data/k8s/addons/dashboard.yml'),
-    'kubedns': res_gzip('data/k8s/addons/kubedns.yml')
-}
-misc = {
-    'kubeconfig': res_plain('data/k8s/kubeconfig.json')
+files = {
+    # systemd units
+    'coremeta'                 : res_plain('data/systemd/coreos-metadata.service.d/10-provider.conf'),
+    'coremetassh'              : res_plain('data/systemd/coreos-metadata-sshkeys@.service.d/10-provider.conf'),
+    'kubelet'                  : res_plain('data/systemd/kubelet.service'),
+    'etcd'                     : res_plain('data/systemd/etcd-member.service.d/10-cluster.conf'),
+    'flanneld'                 : res_plain('data/systemd/flanneld.service.d/10-client.conf'),
+    'flanneld_netconf'         : res_plain('data/systemd/flanneld.service.d/10-network-config.conf'),
+    # k8s components manifests
+    'apiserver'                : res_gzip('data/k8s/manifests/kube-apiserver.yml'),
+    'proxy'                    : res_gzip('data/k8s/manifests/kube-proxy.yml'),
+    'controller_manager'       : res_gzip('data/k8s/manifests/kube-controller-manager.yml'),
+    'scheduler'                : res_gzip('data/k8s/manifests/kube-scheduler.yml'),
+    'addon-manager'            : res_gzip('data/k8s/manifests/kube-addon-manager.yml'),
+    # k8s addons manifests
+    'dashboard'                : res_gzip('data/k8s/addons/dashboard.yml'),
+    'kubedns'                  : res_gzip('data/k8s/addons/kubedns.yml'),
+    # k8s kubeconfig
+    'kubeconfig'               : res_plain('data/k8s/kubeconfig.json')
 }
 
 
@@ -80,7 +78,7 @@ class UserData:
                 'name': 'coreos-metadata.service',
                 'dropins': [{
                     'name': '10-provider.conf',
-                    'contents': sunits['coremeta'].decode()
+                    'contents': files['coremeta'].decode()
                 }]
             },
             {
@@ -88,8 +86,19 @@ class UserData:
                 'enable': True,
                 'dropins': [{
                     'name': '10-provider.conf',
-                    'contents': sunits['coremetassh'].decode()
+                    'contents': files['coremetassh'].decode()
                 }]
+            }
+        ])
+
+    def gen_kube_data(self):
+        """Generate data deployed to all Kubernetes instances"""
+
+        self.add_sunits([
+            {
+                'name': 'kubelet.service',
+                'enable': True,
+                'contents': files['kubelet'].decode()
             }
         ])
 
@@ -102,13 +111,8 @@ class UserData:
                 'enable': True,
                 'dropins': [{
                     'name': '10-cluster.conf',
-                    'contents': sunits['etcd'].decode()
+                    'contents': files['etcd'].decode()
                 }]
-            },
-            {
-                'name': 'kubelet.service',
-                'enable': True,
-                'contents': sunits['kubelet'].decode()
             }
         ])
 
@@ -118,16 +122,7 @@ class UserData:
                 'path': '/etc/kubernetes/manifests/kube-apiserver.yml',
                 'mode': 416, # 0640
                 'contents': {
-                    'source': 'data:,{}'.format(quote(k8s_manifests['apiserver'])),
-                    'compression': 'gzip'
-                }
-            },
-            {
-                'filesystem': 'root',
-                'path': '/etc/kubernetes/manifests/kube-proxy.yml',
-                'mode': 416, # 0640
-                'contents': {
-                    'source': 'data:,{}'.format(quote(k8s_manifests['proxy'])),
+                    'source': 'data:,{}'.format(quote(files['apiserver'])),
                     'compression': 'gzip'
                 }
             },
@@ -136,7 +131,7 @@ class UserData:
                 'path': '/etc/kubernetes/manifests/kube-scheduler.yml',
                 'mode': 416, # 0640
                 'contents': {
-                    'source': 'data:,{}'.format(quote(k8s_manifests['scheduler'])),
+                    'source': 'data:,{}'.format(quote(files['scheduler'])),
                     'compression': 'gzip'
                 }
             },
@@ -145,7 +140,7 @@ class UserData:
                 'path': '/etc/kubernetes/manifests/kube-controller-manager.yml',
                 'mode': 416, # 0640
                 'contents': {
-                    'source': 'data:,{}'.format(quote(k8s_manifests['controller_manager'])),
+                    'source': 'data:,{}'.format(quote(files['controller_manager'])),
                     'compression': 'gzip'
                 }
             },
@@ -154,7 +149,7 @@ class UserData:
                 'path': '/etc/kubernetes/manifests/kube-addon-manager.yml',
                 'mode': 416, # 0640
                 'contents': {
-                    'source': 'data:,{}'.format(quote(k8s_manifests['addon-manager'])),
+                    'source': 'data:,{}'.format(quote(files['addon-manager'])),
                     'compression': 'gzip'
                 }
             },
@@ -163,7 +158,7 @@ class UserData:
                 'path': '/etc/kubernetes/addons/kubedns.yml',
                 'mode': 416, # 0640
                 'contents': {
-                    'source': 'data:,{}'.format(quote(k8s_addons['kubedns'])),
+                    'source': 'data:,{}'.format(quote(files['kubedns'])),
                     'compression': 'gzip'
                 }
             },
@@ -172,7 +167,7 @@ class UserData:
                 'path': '/etc/kubernetes/addons/dashboard.yml',
                 'mode': 416, # 0640
                 'contents': {
-                    'source': 'data:,{}'.format(quote(k8s_addons['dashboard'])),
+                    'source': 'data:,{}'.format(quote(files['dashboard'])),
                     'compression': 'gzip'
                 }
             },
@@ -189,21 +184,13 @@ class UserData:
     def gen_kubenode_data(self):
         """Generate data deployed to all Kubernetes nodes"""
 
-        self.add_sunits([
-            {
-                'name': 'kubelet.service',
-                'enable': True,
-                'contents': sunits['kubelet'].decode()
-            }
-        ])
-
         self.add_files([
             {
                 'filesystem': 'root',
                 'path': '/etc/kubernetes/manifests/kube-proxy.yml',
                 'mode': 416, # 0640
                 'contents': {
-                    'source': 'data:,{}'.format(quote(k8s_manifests['proxy'])),
+                    'source': 'data:,{}'.format(quote(files['proxy'])),
                     'compression': 'gzip'
                 }
             }
@@ -213,11 +200,11 @@ class UserData:
         """Generate kubeconfig"""
 
         if server:
-            kubeconfig = loads(misc['kubeconfig'].decode(), object_pairs_hook=OrderedDict)
+            kubeconfig = loads(files['kubeconfig'].decode(), object_pairs_hook=OrderedDict)
             kubeconfig['clusters'][0]['cluster']['server'] = 'https://' + server + ':6443'
             kubeconfig = compress((dumps(kubeconfig, indent=4) + '\n').encode())
         else:
-            kubeconfig = compress(misc['kubeconfig'])
+            kubeconfig = compress(files['kubeconfig'])
 
         self.add_files([
             {
@@ -239,20 +226,20 @@ class UserData:
             'enable': True
         }
 
-        if server or netconf:
-            fld_unit['dropins'] = []
-
         if server:
-            fld_clconf = sunits['flanneld'].decode().replace('localhost', server)
-            fld_unit['dropins'].append({
-                'name': '10-client.conf',
-                'contents': fld_clconf
-            })
+            fld_clconf = files['flanneld'].decode().replace('localhost', server)
+        else:
+            fld_clconf = files['flanneld'].decode()
+
+        fld_unit['dropins'] = [{
+            'name': '10-client.conf',
+            'contents': fld_clconf
+        }]
 
         if netconf:
             fld_unit['dropins'].append({
                 'name': '10-network-config.conf',
-                'contents': sunits['flanneld_netconf'].decode()
+                'contents': files['flanneld_netconf'].decode()
             })
 
         self.add_sunits([fld_unit])

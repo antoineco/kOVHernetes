@@ -253,7 +253,7 @@ def create_command(client, args):
 
     master = Host(
         name='{}:master'.format(name),
-        roles=['master'],
+        roles=['master', 'node'],
         pub_net=pub_net_id,
         priv_net=priv_net['id'],
         client=client,

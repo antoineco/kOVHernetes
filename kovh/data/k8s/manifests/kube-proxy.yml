@@ -8,10 +8,10 @@ spec:
   hostNetwork: true
   containers:
   - name: kube-proxy
-    image: quay.io/coreos/hyperkube:v1.6.6_coreos.0
+    image: quay.io/coreos/hyperkube:v1.6.6_coreos.1
     command:
     - kube-proxy
-    - --kubeconfig=/etc/kubernetes/kubeconfig
+    - --kubeconfig=/kubeconfig
     securityContext:
       privileged: true
     ports:
@@ -25,14 +25,11 @@ spec:
       initialDelaySeconds: 15
       timeoutSeconds: 15
     volumeMounts:
-    - mountPath: /etc/kubernetes/kubeconfig
+    - mountPath: /kubeconfig
       name: kubeconfig
       readOnly: true
-    - mountPath: /etc/kubernetes/tls
+    - mountPath: /tls
       name: tls-certs
-      readOnly: true
-    - mountPath: /etc/kubernetes/ca/ca.pem
-      name: ca-cert
       readOnly: true
   volumes:
   - hostPath:
@@ -41,6 +38,3 @@ spec:
   - hostPath:
       path: /etc/kubernetes/tls
     name: tls-certs
-  - hostPath:
-      path: /etc/kubernetes/ca/ca.pem
-    name: ca-cert
