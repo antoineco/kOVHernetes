@@ -61,8 +61,8 @@ Security within a cluster is enforced at multiple levels.
 All inter-components communications within the cluster are made [over a TLS connection][k8s-tls], comprising:
 
 * Kubernetes components <-> Kubernetes API server
-* Kubernetes API server <-> etcd (**Work in progress**)
-* flannel <-> etcd  (**Work in progress**)
+* Kubernetes API server <-> etcd
+* flannel <-> etcd
 
 The only exception is the Kubernetes API server, which serves an unsecured and unauthenticated access reachable only
 from localhost on the TCP port 8080 (master instance).

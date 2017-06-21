@@ -11,6 +11,7 @@ spec:
     image: quay.io/coreos/hyperkube:v1.6.6_coreos.1
     command:
     - kube-proxy
+    - --cluster-cidr=172.17.0.0/16
     - --kubeconfig=/kubeconfig
     securityContext:
       privileged: true

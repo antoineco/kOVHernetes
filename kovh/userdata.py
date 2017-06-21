@@ -19,8 +19,8 @@ files = {
     'coremeta'                 : res_plain('data/systemd/coreos-metadata.service.d/10-provider.conf'),
     'coremetassh'              : res_plain('data/systemd/coreos-metadata-sshkeys@.service.d/10-provider.conf'),
     'kubelet'                  : res_plain('data/systemd/kubelet.service'),
-    'etcd'                     : res_plain('data/systemd/etcd-member.service.d/10-cluster.conf'),
-    'flanneld'                 : res_plain('data/systemd/flanneld.service.d/10-client.conf'),
+    'etcd'                     : res_plain('data/systemd/etcd-member.service.d/10-daemon.conf'),
+    'flanneld'                 : res_plain('data/systemd/flanneld.service.d/10-daemon.conf'),
     'flanneld_netconf'         : res_plain('data/systemd/flanneld.service.d/10-network-config.conf'),
     # k8s components manifests
     'apiserver'                : res_gzip('data/k8s/manifests/kube-apiserver.yml'),
@@ -110,7 +110,7 @@ class UserData:
                 'name': 'etcd-member.service',
                 'enable': True,
                 'dropins': [{
-                    'name': '10-cluster.conf',
+                    'name': '10-daemon.conf',
                     'contents': files['etcd'].decode()
                 }]
             }
@@ -232,7 +232,7 @@ class UserData:
             fld_clconf = files['flanneld'].decode()
 
         fld_unit['dropins'] = [{
-            'name': '10-client.conf',
+            'name': '10-daemon.conf',
             'contents': fld_clconf
         }]
 

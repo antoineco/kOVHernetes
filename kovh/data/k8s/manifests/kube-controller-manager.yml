@@ -12,8 +12,10 @@ spec:
     command:
     - kube-controller-manager
     - --address=127.0.0.1
+    - --cluster-cidr=172.17.0.0/16
     - --cluster-signing-cert-file=/tls/ca.pem
     - --cluster-signing-key-file=/tls/ca.key
+    - --configure-cloud-routes=false
     - --kubeconfig=/kubeconfig
     - --root-ca-file=/tls/ca.pem
     - --service-account-private-key-file=/tls/k8s_s.key
