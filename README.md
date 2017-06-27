@@ -31,7 +31,7 @@ OpenStack][coreos-openstack] to download the latest Stable release, then upload 
     --disk-format 'qcow2' \
     --file 'coreos_production_openstack_image.img' \
     --property os-distro='container' \
-    --property os-version='1409.2.0' \
+    --property os-version='1409.5.0' \
     --property image_original_user='core' \
     'Container Linux Stable'
 ```
@@ -86,7 +86,6 @@ kOVHernetes is a toy project written for testing purposes. **Use at your own ris
 
 ## Roadmap
 
-* [ ] RBAC-ready X.509 certs
 * [ ] Secure apiserver -> kubelet communications
 * [ ] `list` command to display clusters
 * [ ] auto-generated local `kubectl` configuration

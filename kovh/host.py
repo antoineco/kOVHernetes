@@ -8,7 +8,7 @@ from .userdata import UserData
 
 class Host:
 
-    def __init__(self, name, roles, pub_net, priv_net, client, ca, ip=None):
+    def __init__(self, name, roles, pub_net, priv_net, client, ca, ip):
         self.name = name
         self.roles = roles
         self.flavor = client._flavor
@@ -21,24 +21,19 @@ class Host:
         self.image = get_coreos_images(client)[0]
 
         self.userdata = UserData()
-        self.userdata.configure_coreos_metadata()
+        self.userdata.configure_clinux_core()
         self.userdata.gen_etc_hosts(client, priv_net)
 
         if any([r in self.roles for r in ['master', 'node']]):
             self.userdata.gen_kube_data()
 
             # Dump X.509 CA cert
-            ca_crt = dump_certificate(FILETYPE_PEM, ca.cert)
+            ca_crt_pem = dump_certificate(FILETYPE_PEM, ca.cert)
 
-            # TLS client pair for kube components
-            kc_key, kc_crt = ca.create_client_pair('system:nodes', 'k8s-client')
-            kc_key_pem = dump_privatekey(FILETYPE_PEM, kc_key)
-            kc_crt_pem = dump_certificate(FILETYPE_PEM, kc_crt)
-
-            # TLS client pair for etcd
-            ec_key, ec_crt = ca.create_client_pair('etcd', 'etcd-client')
-            ec_key_pem = dump_privatekey(FILETYPE_PEM, ec_key)
-            ec_crt_pem = dump_certificate(FILETYPE_PEM, ec_crt)
+            # TLS client pair
+            c_key, c_crt = ca.create_client_pair('system:nodes', 'system:node:host-' + ip.replace('.', '-'))
+            c_key_pem = dump_privatekey(FILETYPE_PEM, c_key)
+            c_crt_pem = dump_certificate(FILETYPE_PEM, c_crt)
 
             self.userdata.add_files ([
                 {
@@ -46,39 +41,23 @@ class Host:
                     'path': '/etc/kubernetes/tls/ca.pem',
                     'mode': 416, # 0640
                     'contents': {
-                        'source': 'data:,{}'.format(quote(ca_crt))
+                        'source': 'data:,{}'.format(quote(ca_crt_pem))
                     }
                 },
                 {
                     'filesystem': 'root',
-                    'path': '/etc/kubernetes/tls/k8s_c.key',
+                    'path': '/etc/kubernetes/tls/client.key',
                     'mode': 384, # 0600
                     'contents': {
-                        'source': 'data:,{}'.format(quote(kc_key_pem))
+                        'source': 'data:,{}'.format(quote(c_key_pem))
                     }
                 },
                 {
                     'filesystem': 'root',
-                    'path': '/etc/kubernetes/tls/k8s_c.crt',
+                    'path': '/etc/kubernetes/tls/client.crt',
                     'mode': 416, # 0640
                     'contents': {
-                        'source': 'data:,{}'.format(quote(kc_crt_pem))
-                    }
-                },
-                {
-                    'filesystem': 'root',
-                    'path': '/etc/kubernetes/tls/etcd_c.key',
-                    'mode': 384, # 0600
-                    'contents': {
-                        'source': 'data:,{}'.format(quote(ec_key_pem))
-                    }
-                },
-                {
-                    'filesystem': 'root',
-                    'path': '/etc/kubernetes/tls/etcd_c.crt',
-                    'mode': 416, # 0640
-                    'contents': {
-                        'source': 'data:,{}'.format(quote(ec_crt_pem))
+                        'source': 'data:,{}'.format(quote(c_crt_pem))
                     }
                 }
             ])
@@ -87,35 +66,34 @@ class Host:
             self.userdata.gen_kubemaster_data()
 
             # Dump X.509 CA key
-            ca_key = dump_privatekey(FILETYPE_PEM, ca.key)
+            ca_key_pem = dump_privatekey(FILETYPE_PEM, ca.key)
 
             # TLS server pair for kube API server
-            ks_san = [
+            api_san = [
                 'DNS:kubernetes.default.svc.cluster.local',
                 'DNS:kubernetes.default.svc',
                 'DNS:kubernetes.default',
                 'DNS:kubernetes',
+                'IP:10.0.0.1',
                 'DNS:localhost',
-                'IP:10.0.0.1'
+                'IP:127.0.0.1',
+                'DNS:{}'.format('host-' + ip.replace('.', '-')),
+                'IP:{}'.format(ip)
             ]
-            if ip:
-                ks_san.extend([
-                    'IP:{}'.format(ip),
-                    'DNS:{}'.format('host-' + ip.replace('.', '-'))
-                ])
+            api_key, api_crt = ca.create_server_pair('Kubernetes', 'apiserver', api_san)
+            api_key_pem = dump_privatekey(FILETYPE_PEM, api_key)
+            api_crt_pem = dump_certificate(FILETYPE_PEM, api_crt)
 
-            ks_key, ks_crt = ca.create_server_pair('Kubernetes', 'apiserver', ks_san)
-            ks_key_pem = dump_privatekey(FILETYPE_PEM, ks_key)
-            ks_crt_pem = dump_certificate(FILETYPE_PEM, ks_crt)
-
-            # TLS server pair for etcd
-            es_san = ['DNS:localhost']
-            if ip:
-                es_san.append('IP:{}'.format(ip))
-
-            es_key, es_crt = ca.create_server_pair('etcd', 'master', es_san)
-            es_key_pem = dump_privatekey(FILETYPE_PEM, es_key)
-            es_crt_pem = dump_certificate(FILETYPE_PEM, es_crt)
+            # TLS server pair for etcd member
+            etcd_san = [
+                'DNS:localhost',
+                'IP:127.0.0.1',
+                'DNS:{}'.format('host-' + ip.replace('.', '-')),
+                'IP:{}'.format(ip)
+            ]
+            etcd_key, etcd_crt = ca.create_server_pair('etcd', 'master', etcd_san)
+            etcd_key_pem = dump_privatekey(FILETYPE_PEM, etcd_key)
+            etcd_crt_pem = dump_certificate(FILETYPE_PEM, etcd_crt)
 
             self.userdata.add_files ([
                 {
@@ -123,42 +101,42 @@ class Host:
                     'path': '/etc/kubernetes/tls/ca.key',
                     'mode': 384, # 0600
                     'contents': {
-                        'source': 'data:,{}'.format(quote(ca_key))
+                        'source': 'data:,{}'.format(quote(ca_key_pem))
                     }
                 },
                 {
                     'filesystem': 'root',
-                    'path': '/etc/kubernetes/tls/k8s_s.key',
+                    'path': '/etc/kubernetes/tls/apiserver.key',
                     'mode': 384, # 0600
                     'contents': {
-                        'source': 'data:,{}'.format(quote(ks_key_pem))
+                        'source': 'data:,{}'.format(quote(api_key_pem))
                     }
                 },
                 {
                     'filesystem': 'root',
-                    'path': '/etc/kubernetes/tls/k8s_s.crt',
+                    'path': '/etc/kubernetes/tls/apiserver.crt',
                     'mode': 416, # 0640
                     'contents': {
-                        'source': 'data:,{}'.format(quote(ks_crt_pem))
+                        'source': 'data:,{}'.format(quote(api_crt_pem))
                     }
                 },
                 {
                     'filesystem': 'root',
-                    'path': '/etc/kubernetes/tls/etcd_s.key',
+                    'path': '/etc/kubernetes/tls/etcd.key',
                     'mode': 384, # 0600
                     'user': {
                         'id': 232 # etcd user id
                     },
                     'contents': {
-                        'source': 'data:,{}'.format(quote(es_key_pem))
+                        'source': 'data:,{}'.format(quote(etcd_key_pem))
                     }
                 },
                 {
                     'filesystem': 'root',
-                    'path': '/etc/kubernetes/tls/etcd_s.crt',
+                    'path': '/etc/kubernetes/tls/etcd.crt',
                     'mode': 416, # 0640
                     'contents': {
-                        'source': 'data:,{}'.format(quote(es_crt_pem))
+                        'source': 'data:,{}'.format(quote(etcd_crt_pem))
                     }
                 }
             ])

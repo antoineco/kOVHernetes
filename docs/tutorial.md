@@ -63,7 +63,7 @@ SSH key configured in your project. Let's start by logging in to the `master` in
 ```
 ❯ ssh core@147.135.193.248
 
-Container Linux by CoreOS stable (1409.2.0)
+Container Linux by CoreOS stable (1409.5.0)
 core@host-192-168-0-1 ~ $
 ```
 

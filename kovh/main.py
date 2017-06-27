@@ -233,7 +233,7 @@ def create_command(client, args):
 
     print('\t[OK]')
 
-    subnet = IPv4Network('192.168.0.0/24')
+    subnet = IPv4Network('192.168.0.0/27')
 
     print('Creating subnet', end='', flush=True)
     try:
@@ -265,16 +265,18 @@ def create_command(client, args):
 
     nodes = []
     for i in range(1, size):
+        next_ip = next(hosts)
         node = Host(
             name='{}:node{:02}'.format(name, i),
             roles=['node'],
             pub_net=pub_net_id,
             priv_net=priv_net['id'],
             client=client,
-            ca=k8s_ca
+            ca=k8s_ca,
+            ip=str(next_ip)
         )
-        node.userdata.gen_kubeconfig(master.ip)
-        node.userdata.gen_flanneld_config(master.ip)
+        node.userdata.gen_kubeconfig('host-' + master.ip.replace('.', '-'))
+        node.userdata.gen_flanneld_config('host-' + master.ip.replace('.', '-'))
         nodes.append(node)
 
     print('Creating instances', end='', flush=True)

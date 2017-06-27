@@ -17,13 +17,13 @@ spec:
     - --apiserver-count=1
     - --client-ca-file=/tls/ca.pem
     - --etcd-cafile=/tls/ca.pem
-    - --etcd-certfile=/tls/etcd_c.crt
-    - --etcd-keyfile=/tls/etcd_c.key
+    - --etcd-certfile=/tls/client.crt
+    - --etcd-keyfile=/tls/client.key
     - --etcd-servers=https://localhost:2379
     - --service-cluster-ip-range=10.0.0.0/24
     - --tls-ca-file=/tls/ca.pem
-    - --tls-cert-file=/tls/k8s_s.crt
-    - --tls-private-key-file=/tls/k8s_s.key
+    - --tls-cert-file=/tls/apiserver.crt
+    - --tls-private-key-file=/tls/apiserver.key
     ports:
     - containerPort: 8080
       name: http

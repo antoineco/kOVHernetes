@@ -13,7 +13,7 @@ class CA:
     def __init__(self):
         # CA key
         key = crypto.PKey()
-        key.generate_key(crypto.TYPE_RSA, 4096)
+        key.generate_key(crypto.TYPE_RSA, 2048)
 
         # CA cert
         cert = crypto.X509()

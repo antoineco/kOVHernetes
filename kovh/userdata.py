@@ -43,9 +43,7 @@ class UserData:
         self.data = {
             'ignition': { 'version': '2.0.0' },
             'storage': {},
-            'systemd': {},
-            'networkd': {},
-            'passwd': {}
+            'systemd': {}
         }
 
     def add_files(self, definition):
@@ -70,8 +68,8 @@ class UserData:
         else:
             raise TypeError("'definition must be a list, not '{}'".format(type(definition)))
 
-    def configure_coreos_metadata(self):
-        """Generate drop-ins for coreos-metadata"""
+    def configure_clinux_core(self):
+        """Generate drop-ins for Container Linux core services"""
 
         self.add_sunits([
             {
@@ -88,6 +86,10 @@ class UserData:
                     'name': '10-provider.conf',
                     'contents': files['coremetassh'].decode()
                 }]
+            },
+            {
+                'name': 'locksmithd.service',
+                'mask': True
             }
         ])
 

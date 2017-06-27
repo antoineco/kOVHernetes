@@ -30,10 +30,10 @@ deployed with kOVHernetes, the `master` instance is effectively both the cluster
 
 | CIDR           | Description                                                               |
 |----------------|---------------------------------------------------------------------------|
-| 192.168.0.0/24 | Private network (OVH vRack) to which all cluster instances are connected. |
+| 192.168.0.0/27 | Private network (OVH vRack) to which all cluster instances are connected. |
 
-A reserved IP address is assigned to the master instance duríng the bootstrap process. All subsequent instances
-(nodes/workers) receive an arbitrary IP address from the DHCP server (backed by OpenStack Neutron).
+A reserved and predictable IP address is assigned to each cluster instance duríng the bootstrap process. Each instance
+acquires its network configuration from the DHCP server (backed by OpenStack Neutron) at boot time.
 
 ### Pod network
 

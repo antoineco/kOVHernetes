@@ -18,7 +18,7 @@ spec:
     - --configure-cloud-routes=false
     - --kubeconfig=/kubeconfig
     - --root-ca-file=/tls/ca.pem
-    - --service-account-private-key-file=/tls/k8s_s.key
+    - --service-account-private-key-file=/tls/apiserver.key
     - --service-cluster-ip-range=10.0.0.0/24
     resources:
       requests:
