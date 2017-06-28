@@ -34,7 +34,7 @@ spec:
       readOnly: true
   volumes:
   - hostPath:
-      path: /etc/kubernetes/kubeconfig
+      path: /etc/kubernetes/kubeconfig-proxy
     name: kubeconfig
   - hostPath:
       path: /etc/kubernetes/tls

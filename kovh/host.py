@@ -30,10 +30,15 @@ class Host:
             # Dump X.509 CA cert
             ca_crt_pem = dump_certificate(FILETYPE_PEM, ca.cert)
 
-            # TLS client pair
-            c_key, c_crt = ca.create_client_pair('system:nodes', 'system:node:host-' + ip.replace('.', '-'))
-            c_key_pem = dump_privatekey(FILETYPE_PEM, c_key)
-            c_crt_pem = dump_certificate(FILETYPE_PEM, c_crt)
+            # TLS client certificates
+            client_key = ca.create_key()
+            client_key_pem = dump_privatekey(FILETYPE_PEM, client_key)
+            kubelet_crt = ca.create_client_cert(client_key, 'system:nodes', 'system:node:host-' + ip.replace('.', '-'))
+            kubelet_crt_pem = dump_certificate(FILETYPE_PEM, kubelet_crt)
+            proxy_crt = ca.create_client_cert(client_key, 'Kubernetes', 'system:kube-proxy')
+            proxy_crt_pem = dump_certificate(FILETYPE_PEM, proxy_crt)
+            etcd_crt = ca.create_client_cert(client_key, 'etcd', 'root')
+            etcd_crt_pem = dump_certificate(FILETYPE_PEM, etcd_crt)
 
             self.userdata.add_files ([
                 {
@@ -49,17 +54,34 @@ class Host:
                     'path': '/etc/kubernetes/tls/client.key',
                     'mode': 384, # 0600
                     'contents': {
-                        'source': 'data:,{}'.format(quote(c_key_pem))
+                        'source': 'data:,{}'.format(quote(client_key_pem))
                     }
                 },
                 {
                     'filesystem': 'root',
-                    'path': '/etc/kubernetes/tls/client.crt',
+                    'path': '/etc/kubernetes/tls/kubelet.crt',
                     'mode': 416, # 0640
                     'contents': {
-                        'source': 'data:,{}'.format(quote(c_crt_pem))
+                        'source': 'data:,{}'.format(quote(kubelet_crt_pem))
+                    }
+                },
+                {
+                    'filesystem': 'root',
+                    'path': '/etc/kubernetes/tls/proxy.crt',
+                    'mode': 416, # 0640
+                    'contents': {
+                        'source': 'data:,{}'.format(quote(proxy_crt_pem))
+                    }
+                },
+                {
+                    'filesystem': 'root',
+                    'path': '/etc/kubernetes/tls/etcd.crt',
+                    'mode': 416, # 0640
+                    'contents': {
+                        'source': 'data:,{}'.format(quote(etcd_crt_pem))
                     }
                 }
+
             ])
 
         if 'master' in self.roles:
@@ -85,15 +107,21 @@ class Host:
             api_crt_pem = dump_certificate(FILETYPE_PEM, api_crt)
 
             # TLS server pair for etcd member
-            etcd_san = [
+            etcd_m_san = [
                 'DNS:localhost',
                 'IP:127.0.0.1',
                 'DNS:{}'.format('host-' + ip.replace('.', '-')),
                 'IP:{}'.format(ip)
             ]
-            etcd_key, etcd_crt = ca.create_server_pair('etcd', 'master', etcd_san)
-            etcd_key_pem = dump_privatekey(FILETYPE_PEM, etcd_key)
-            etcd_crt_pem = dump_certificate(FILETYPE_PEM, etcd_crt)
+            etcd_m_key, etcd_m_crt = ca.create_server_pair('etcd', 'member', etcd_m_san)
+            etcd_m_key_pem = dump_privatekey(FILETYPE_PEM, etcd_m_key)
+            etcd_m_crt_pem = dump_certificate(FILETYPE_PEM, etcd_m_crt)
+
+            # TLS client certificates
+            cm_crt = ca.create_client_cert(client_key, 'Kubernetes', 'system:kube-controller-manager')
+            cm_crt_pem = dump_certificate(FILETYPE_PEM, cm_crt)
+            scheduler_crt = ca.create_client_cert(client_key, 'Kubernetes', 'system:kube-scheduler')
+            scheduler_crt_pem = dump_certificate(FILETYPE_PEM, scheduler_crt)
 
             self.userdata.add_files ([
                 {
@@ -122,21 +150,37 @@ class Host:
                 },
                 {
                     'filesystem': 'root',
-                    'path': '/etc/kubernetes/tls/etcd.key',
+                    'path': '/etc/kubernetes/tls/etcd-m.key',
                     'mode': 384, # 0600
                     'user': {
                         'id': 232 # etcd user id
                     },
                     'contents': {
-                        'source': 'data:,{}'.format(quote(etcd_key_pem))
+                        'source': 'data:,{}'.format(quote(etcd_m_key_pem))
                     }
                 },
                 {
                     'filesystem': 'root',
-                    'path': '/etc/kubernetes/tls/etcd.crt',
+                    'path': '/etc/kubernetes/tls/etcd-m.crt',
                     'mode': 416, # 0640
                     'contents': {
-                        'source': 'data:,{}'.format(quote(etcd_crt_pem))
+                        'source': 'data:,{}'.format(quote(etcd_m_crt_pem))
+                    }
+                },
+                {
+                    'filesystem': 'root',
+                    'path': '/etc/kubernetes/tls/controller-manager.crt',
+                    'mode': 416, # 0640
+                    'contents': {
+                        'source': 'data:,{}'.format(quote(cm_crt_pem))
+                    }
+                },
+                {
+                    'filesystem': 'root',
+                    'path': '/etc/kubernetes/tls/scheduler.crt',
+                    'mode': 416, # 0640
+                    'contents': {
+                        'source': 'data:,{}'.format(quote(scheduler_crt_pem))
                     }
                 }
             ])
@@ -163,6 +207,6 @@ class Host:
                 }
             ],
             'region': self.region,
-            'userData': dumps(self.userdata.data)
+            'userData': dumps(self.userdata.data, separators=(',', ':'))
         }
         return body

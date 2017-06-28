@@ -198,20 +198,21 @@ class UserData:
             }
         ])
 
-    def gen_kubeconfig(self, server=None):
+    def gen_kubeconfig(self, component, server=None):
         """Generate kubeconfig"""
 
+        kubeconfig = loads(files['kubeconfig'].decode(), object_pairs_hook=OrderedDict)
+        kubeconfig['users'][0]['user']['client-certificate'] = 'tls/{}.crt'.format(component)
+
         if server:
-            kubeconfig = loads(files['kubeconfig'].decode(), object_pairs_hook=OrderedDict)
             kubeconfig['clusters'][0]['cluster']['server'] = 'https://' + server + ':6443'
-            kubeconfig = compress((dumps(kubeconfig, indent=4) + '\n').encode())
-        else:
-            kubeconfig = compress(files['kubeconfig'])
+
+        kubeconfig = compress((dumps(kubeconfig, indent=4) + '\n').encode())
 
         self.add_files([
             {
                 'filesystem': 'root',
-                'path': '/etc/kubernetes/kubeconfig',
+                'path': '/etc/kubernetes/kubeconfig-{}'.format(component),
                 'mode': 416, # 0640
                 'contents': {
                     'source': 'data:,{}'.format(quote(kubeconfig)),

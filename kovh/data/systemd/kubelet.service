@@ -18,7 +18,7 @@ ExecStartPre=/usr/bin/mkdir --parents /var/lib/coreos
 ExecStartPre=-/usr/bin/rkt rm --uuid-file=/var/lib/coreos/kubelet-wrapper.uuid
 ExecStart=/usr/lib/coreos/kubelet-wrapper \
   --address=${COREOS_OPENSTACK_IPV4_LOCAL} \
-  --kubeconfig=/etc/kubernetes/kubeconfig \
+  --kubeconfig=/etc/kubernetes/kubeconfig-kubelet \
   --require-kubeconfig \
   --pod-manifest-path=/etc/kubernetes/manifests \
   --allow-privileged \

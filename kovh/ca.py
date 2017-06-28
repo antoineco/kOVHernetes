@@ -44,8 +44,46 @@ class CA:
         self.cert = cert
         self.key = key
 
-    def create_client_pair(self, o, cn):
+    def create_key(self):
+        """Issue a X.509 key"""
+
+        key = crypto.PKey()
+        key.generate_key(crypto.TYPE_RSA, 2048)
+        return key
+
+    def create_client_cert(self, key, o, cn):
         """Issue a X.509 client certificate"""
+
+        cert = crypto.X509()
+        cert.set_serial_number(self.__next_serial)
+        cert.set_version(2)
+        cert.set_pubkey(key)
+        cert.gmtime_adj_notBefore(0)
+        cert.gmtime_adj_notAfter(365*24*60*60)
+
+        cert_subject = cert.get_subject()
+        cert_subject.O = o
+        cert_subject.OU = 'kOVHernetes'
+        cert_subject.CN = cn
+        cert.set_issuer(self.cert.get_issuer())
+
+        cert_ext = []
+        cert_ext.append(crypto.X509Extension(b'subjectKeyIdentifier', False, b'hash', cert))
+        cert_ext.append(crypto.X509Extension(b'authorityKeyIdentifier', False, b'keyid,issuer', issuer=cert))
+        cert_ext.append(crypto.X509Extension(b'basicConstraints', False, b'CA:FALSE'))
+        cert_ext.append(crypto.X509Extension(b'keyUsage', True, b'nonRepudiation, digitalSignature, keyEncipherment'))
+        cert_ext.append(crypto.X509Extension(b'extendedKeyUsage', True, b'clientAuth'))
+        cert.add_extensions(cert_ext)
+
+        # sign cert with CA key
+        cert.sign(self.key, 'sha256')
+
+        type(self).__next_serial += 1
+
+        return cert
+
+    def create_client_pair(self, o, cn):
+        """Issue a X.509 client key/certificate pair"""
 
         # key
         key = crypto.PKey()
@@ -73,7 +111,7 @@ class CA:
         cert_ext.append(crypto.X509Extension(b'extendedKeyUsage', True, b'clientAuth'))
         cert.add_extensions(cert_ext)
 
-        # sign request with CA key
+        # sign cert with CA key
         cert.sign(self.key, 'sha256')
 
         type(self).__next_serial += 1
@@ -81,7 +119,7 @@ class CA:
         return key, cert
 
     def create_server_pair(self, o, cn, san=[]):
-        """Issue a X.509 server certificate"""
+        """Issue a X.509 server key/certificate pair"""
 
         # key
         key = crypto.PKey()
@@ -110,7 +148,7 @@ class CA:
         if san: cert_ext.append(crypto.X509Extension(b'subjectAltName', False, ','.join(san).encode()))
         cert.add_extensions(cert_ext)
 
-        # sign request with CA key
+        # sign cert with CA key
         cert.sign(self.key, 'sha256')
 
         type(self).__next_serial += 1

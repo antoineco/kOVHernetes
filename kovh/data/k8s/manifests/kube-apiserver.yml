@@ -15,9 +15,10 @@ spec:
     - --allow-privileged
     - --anonymous-auth=false
     - --apiserver-count=1
+    - --authorization-mode=AlwaysAllow
     - --client-ca-file=/tls/ca.pem
     - --etcd-cafile=/tls/ca.pem
-    - --etcd-certfile=/tls/client.crt
+    - --etcd-certfile=/tls/etcd.crt
     - --etcd-keyfile=/tls/client.key
     - --etcd-servers=https://localhost:2379
     - --service-cluster-ip-range=10.0.0.0/24
