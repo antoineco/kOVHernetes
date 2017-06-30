@@ -11,7 +11,7 @@ RestartSec=10s
 TimeoutStartSec=0
 
 EnvironmentFile=/run/metadata/coreos
-Environment="KUBELET_IMAGE_TAG=v1.6.6_coreos.1"
+Environment="KUBELET_IMAGE_TAG=__IMAGE_TAG__"
 Environment="RKT_RUN_ARGS=--uuid-file-save=/var/lib/coreos/kubelet-wrapper.uuid --hosts-entry=host --dns=host"
 
 ExecStartPre=/usr/bin/mkdir --parents /var/lib/coreos

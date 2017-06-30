@@ -12,6 +12,7 @@ setup(
     package_data={
         'kovh': [
             'data/k8s/*/*.yml',
+            'data/k8s/manifests/*.json',
             'data/k8s/kubeconfig.json',
             'data/systemd/*.service',
             'data/systemd/*/*.conf'

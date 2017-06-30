@@ -23,10 +23,10 @@ files = {
     'flanneld'                 : res_plain('data/systemd/flanneld.service.d/10-daemon.conf'),
     'flanneld_netconf'         : res_plain('data/systemd/flanneld.service.d/10-network-config.conf'),
     # k8s components manifests
-    'apiserver'                : res_gzip('data/k8s/manifests/kube-apiserver.yml'),
-    'proxy'                    : res_gzip('data/k8s/manifests/kube-proxy.yml'),
-    'controller_manager'       : res_gzip('data/k8s/manifests/kube-controller-manager.yml'),
-    'scheduler'                : res_gzip('data/k8s/manifests/kube-scheduler.yml'),
+    'apiserver'                : res_plain('data/k8s/manifests/kube-apiserver.json'),
+    'proxy'                    : res_plain('data/k8s/manifests/kube-proxy.json'),
+    'controller-manager'       : res_plain('data/k8s/manifests/kube-controller-manager.json'),
+    'scheduler'                : res_plain('data/k8s/manifests/kube-scheduler.json'),
     'addon-manager'            : res_gzip('data/k8s/manifests/kube-addon-manager.yml'),
     # k8s addons manifests
     'dashboard'                : res_gzip('data/k8s/addons/dashboard.yml'),
@@ -38,7 +38,10 @@ files = {
 
 class UserData:
 
-    def __init__(self):
+    def __init__(self, k8s_ver='1.6.6', img_suffix='coreos.1'):
+        self.k8s_ver = k8s_ver
+        self.img_suffix = img_suffix
+
         # boilerplate ignition config
         self.data = {
             'ignition': { 'version': '2.0.0' },
@@ -93,151 +96,69 @@ class UserData:
             }
         ])
 
-    def gen_kube_data(self):
-        """Generate data deployed to all Kubernetes instances"""
+    def gen_kubeconfig(self, component, server='localhost'):
+        """Generate kubeconfig"""
+
+        kubeconfig = loads(files['kubeconfig'].decode(), object_pairs_hook=OrderedDict)
+        kubeconfig['users'][0]['user']['client-certificate'] = 'tls/{}.crt'.format(component)
+        kubeconfig['clusters'][0]['cluster']['server'] = 'https://' + server + ':6443'
+
+        kubeconfig = compress((dumps(kubeconfig, indent=2) + '\n').encode())
+
+        self.add_files([
+            {
+                'filesystem': 'root',
+                'path': '/etc/kubernetes/kubeconfig-' + component,
+                'mode': 416, # 0640
+                'contents': {
+                    'source': 'data:,' + quote(kubeconfig),
+                    'compression': 'gzip'
+                }
+            }
+        ])
+
+    def gen_kubemanifest(self, component, tag):
+        """Generate Kubernetes Pod manifest"""
+
+        manifest = loads(files[component].decode(), object_pairs_hook=OrderedDict)
+        manifest['spec']['containers'][0]['image'] = 'quay.io/coreos/hyperkube:' + tag
+
+        manifest = compress((dumps(manifest, indent=2) + '\n').encode())
+
+        self.add_files([
+            {
+                'filesystem': 'root',
+                'path': '/etc/kubernetes/manifests/kube-{}.json'.format(component),
+                'mode': 416, # 0640
+                'contents': {
+                    'source': 'data:,' + quote(manifest),
+                    'compression': 'gzip'
+                }
+            }
+        ])
+
+    def gen_kubelet_unit(self, tag):
+        """Generate kubelet service unit"""
 
         self.add_sunits([
             {
                 'name': 'kubelet.service',
                 'enable': True,
-                'contents': files['kubelet'].decode()
+                'contents': files['kubelet'].decode().replace('__IMAGE_TAG__', tag)
             }
         ])
 
-    def gen_kubemaster_data(self):
-        """Generate data deployed to all Kubernetes masters"""
-
-        self.add_sunits([
-            {
-                'name': 'etcd-member.service',
-                'enable': True,
-                'dropins': [{
-                    'name': '10-daemon.conf',
-                    'contents': files['etcd'].decode()
-                }]
-            }
-        ])
-
-        self.add_files([
-            {
-                'filesystem': 'root',
-                'path': '/etc/kubernetes/manifests/kube-apiserver.yml',
-                'mode': 416, # 0640
-                'contents': {
-                    'source': 'data:,{}'.format(quote(files['apiserver'])),
-                    'compression': 'gzip'
-                }
-            },
-            {
-                'filesystem': 'root',
-                'path': '/etc/kubernetes/manifests/kube-scheduler.yml',
-                'mode': 416, # 0640
-                'contents': {
-                    'source': 'data:,{}'.format(quote(files['scheduler'])),
-                    'compression': 'gzip'
-                }
-            },
-            {
-                'filesystem': 'root',
-                'path': '/etc/kubernetes/manifests/kube-controller-manager.yml',
-                'mode': 416, # 0640
-                'contents': {
-                    'source': 'data:,{}'.format(quote(files['controller_manager'])),
-                    'compression': 'gzip'
-                }
-            },
-            {
-                'filesystem': 'root',
-                'path': '/etc/kubernetes/manifests/kube-addon-manager.yml',
-                'mode': 416, # 0640
-                'contents': {
-                    'source': 'data:,{}'.format(quote(files['addon-manager'])),
-                    'compression': 'gzip'
-                }
-            },
-            {
-                'filesystem': 'root',
-                'path': '/etc/kubernetes/addons/kubedns.yml',
-                'mode': 416, # 0640
-                'contents': {
-                    'source': 'data:,{}'.format(quote(files['kubedns'])),
-                    'compression': 'gzip'
-                }
-            },
-            {
-                'filesystem': 'root',
-                'path': '/etc/kubernetes/addons/dashboard.yml',
-                'mode': 416, # 0640
-                'contents': {
-                    'source': 'data:,{}'.format(quote(files['dashboard'])),
-                    'compression': 'gzip'
-                }
-            },
-            {
-                'filesystem': 'root',
-                'path': '/opt/bin/kubectl',
-                'mode': 493, # 0755
-                'contents': {
-                    'source': 'https://storage.googleapis.com/kubernetes-release/release/v1.6.6/bin/linux/amd64/kubectl'
-                }
-            }
-        ])
-
-    def gen_kubenode_data(self):
-        """Generate data deployed to all Kubernetes nodes"""
-
-        self.add_files([
-            {
-                'filesystem': 'root',
-                'path': '/etc/kubernetes/manifests/kube-proxy.yml',
-                'mode': 416, # 0640
-                'contents': {
-                    'source': 'data:,{}'.format(quote(files['proxy'])),
-                    'compression': 'gzip'
-                }
-            }
-        ])
-
-    def gen_kubeconfig(self, component, server=None):
-        """Generate kubeconfig"""
-
-        kubeconfig = loads(files['kubeconfig'].decode(), object_pairs_hook=OrderedDict)
-        kubeconfig['users'][0]['user']['client-certificate'] = 'tls/{}.crt'.format(component)
-
-        if server:
-            kubeconfig['clusters'][0]['cluster']['server'] = 'https://' + server + ':6443'
-
-        kubeconfig = compress((dumps(kubeconfig, indent=4) + '\n').encode())
-
-        self.add_files([
-            {
-                'filesystem': 'root',
-                'path': '/etc/kubernetes/kubeconfig-{}'.format(component),
-                'mode': 416, # 0640
-                'contents': {
-                    'source': 'data:,{}'.format(quote(kubeconfig)),
-                    'compression': 'gzip'
-                }
-            }
-        ])
-
-    def gen_flanneld_config(self, server=None, netconf=False):
+    def gen_flanneld_config(self, server='localhost', netconf=False):
         """Generate flanneld config"""
 
         fld_unit = {
             'name': 'flanneld.service',
-            'enable': True
+            'enable': True,
+            'dropins': [{
+                'name': '10-daemon.conf',
+                'contents': files['flanneld'].decode().replace('__ETCD_URL__', 'https://' + server + ':2379')
+            }]
         }
-
-        if server:
-            fld_clconf = files['flanneld'].decode().replace('localhost', server)
-        else:
-            fld_clconf = files['flanneld'].decode()
-
-        fld_unit['dropins'] = [{
-            'name': '10-daemon.conf',
-            'contents': fld_clconf
-        }]
 
         if netconf:
             fld_unit['dropins'].append({
@@ -268,8 +189,74 @@ class UserData:
                 'path': '/etc/hosts',
                 'mode': 420, # 0644
                 'contents': {
-                    'source': 'data:,{}'.format(quote(hosts_content)),
+                    'source': 'data:,' + quote(hosts_content),
                     'compression': 'gzip'
                 }
             }
         ])
+
+    def gen_kube_data(self):
+        """Generate data deployed to all Kubernetes instances"""
+
+        self.gen_kubelet_unit('v{}_{}'.format(self.k8s_ver, self.img_suffix))
+
+    def gen_kubemaster_data(self):
+        """Generate data deployed to all Kubernetes masters"""
+
+        self.add_sunits([
+            {
+                'name': 'etcd-member.service',
+                'enable': True,
+                'dropins': [{
+                    'name': '10-daemon.conf',
+                    'contents': files['etcd'].decode()
+                }]
+            }
+        ])
+
+        for component in 'apiserver', 'scheduler', 'controller-manager':
+            self.gen_kubemanifest(component, 'v{}_{}'.format(self.k8s_ver, self.img_suffix))
+
+        self.add_files([
+            {
+                'filesystem': 'root',
+                'path': '/etc/kubernetes/manifests/kube-addon-manager.yml',
+                'mode': 416, # 0640
+                'contents': {
+                    'source': 'data:,' + quote(files['addon-manager']),
+                    'compression': 'gzip'
+                }
+            },
+            {
+                'filesystem': 'root',
+                'path': '/etc/kubernetes/addons/kubedns.yml',
+                'mode': 416, # 0640
+                'contents': {
+                    'source': 'data:,' + quote(files['kubedns']),
+                    'compression': 'gzip'
+                }
+            },
+            {
+                'filesystem': 'root',
+                'path': '/etc/kubernetes/addons/dashboard.yml',
+                'mode': 416, # 0640
+                'contents': {
+                    'source': 'data:,' + quote(files['dashboard']),
+                    'compression': 'gzip'
+                }
+            },
+            {
+                'filesystem': 'root',
+                'path': '/opt/bin/kubectl',
+                'mode': 493, # 0755
+                'contents': {
+                    'source': ('https://storage.googleapis.com/kubernetes-release/release/'
+                               'v{}/bin/linux/amd64/kubectl').format(self.k8s_ver)
+                }
+            }
+        ])
+
+    def gen_kubenode_data(self):
+        """Generate data deployed to all Kubernetes nodes"""
+
+        self.gen_kubemanifest('proxy', 'v{}_{}'.format(self.k8s_ver, self.img_suffix))

@@ -20,11 +20,12 @@ pre-configured using [Ignition][ignition], including a [flannel][flannel] overla
 
 ### :warning: CoreOS Container Linux image
 
-The *Container Linux* image available in the OVH image service as of 06/21/2017 is outdated and misses features required
-by the `kovh` client (Ignition OpenStack compatibility, *rkt* wrapper scripts).
+The *Container Linux* image available in the OVH image service is outdated and misses features required by the `kovh`
+client (Ignition OpenStack compatibility, *rkt* wrapper scripts).
 
 Until this problem is tackled by OVH, please follow the instructions at [Running CoreOS Container Linux on
-OpenStack][coreos-openstack] to download the latest Stable release, then upload it to your OVH account with:
+OpenStack][coreos-ostack] to download the latest Stable release, then upload it to your OVH account using the [openstack
+client][ostack-cli]:
 
 ```sh
 ❯ openstack image create \
@@ -36,7 +37,8 @@ OpenStack][coreos-openstack] to download the latest Stable release, then upload 
     'Container Linux Stable'
 ```
 
-[coreos-openstack]: https://coreos.com/os/docs/latest/booting-on-openstack.html
+[coreos-ostack]: https://coreos.com/os/docs/latest/booting-on-openstack.html
+[ostack-cli]: https://pypi.python.org/pypi/python-openstackclient
 
 ### Runtime
 
