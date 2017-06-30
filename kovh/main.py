@@ -18,14 +18,16 @@ Commands:
 Use 'kovh <command> -h' for more information about a given command.
 """
 
-from docopt    import docopt
-from ovh       import APIError, ResourceNotFoundError
-from inspect   import cleandoc
-from json      import dumps
-from sys       import exit
-from os.path   import realpath
-from time      import sleep
-from ipaddress import IPv4Network
+from docopt         import docopt
+from ovh            import APIError, ResourceNotFoundError
+from inspect        import cleandoc
+from json           import dumps
+from sys            import exit
+from os             import getlogin
+from os.path        import realpath, expanduser
+from time           import sleep
+from ipaddress      import IPv4Network
+#from OpenSSL.crypto import dump_certificate, dump_privatekey, FILETYPE_PEM
 
 from .       import __version__
 from .       import project
@@ -186,7 +188,8 @@ def create_command(client, args):
         print('Missing parameters from configuration:', ', '.join(["'{}'".format(x) for x in missing_params ]))
         exit(1)
 
-    name = 'kovh:{}:'.format(args['--name'])
+    name = args['--name']
+    longname = 'kovh:{}:'.format(name)
     try:
         size = int(args['--size'])
     except ValueError as e:
@@ -207,26 +210,25 @@ def create_command(client, args):
 
     # TODO: rollback on failure
 
-    print("Creating private network '{}' with VLAN id {}".format(name, vlan_id), end='', flush=True)
+    print("Creating private network '{}' with VLAN id {}".format(longname, vlan_id), end='', flush=True)
     try:
-        priv_net = infra.create_priv_network(client, name, vlan_id)
+        priv_net = infra.create_priv_network(client, longname, vlan_id)
     except APIError as e:
         print(e)
         exit(1)
 
     print('\t[OK]')
 
-    print("Waiting for readiness of private network '{}'".format(name), end='', flush=True)
+    print("Waiting for readiness of private network '{}'".format(longname), end='', flush=True)
 
     network_active = False
     while not network_active:
         try:
             network_detail = client.get('/cloud/project/{}/network/private/{}'.format(client._project, priv_net['id']))
-        except ResourceNotFoundError:
-            pass
-        else:
             if network_detail.get('status') == 'ACTIVE':
                 network_active = True
+        except ResourceNotFoundError:
+            pass
 
         print('.', end='', flush=True)
         sleep(1)
@@ -248,11 +250,13 @@ def create_command(client, args):
     k8s_ca = CA()
     print('\t[OK]')
 
+    print('Generating User Data', end='', flush=True)
     hosts = subnet.hosts()
-    for _ in range(10): next_ip = next(hosts)
+    for _ in range(10):
+        next_ip = next(hosts)
 
     master = Host(
-        name='{}:master'.format(name),
+        name='{}:master'.format(longname),
         roles=['master', 'node'],
         pub_net=pub_net_id,
         priv_net=priv_net['id'],
@@ -268,7 +272,7 @@ def create_command(client, args):
     for i in range(1, size):
         next_ip = next(hosts)
         node = Host(
-            name='{}:node{:02}'.format(name, i),
+            name='{}:node{:02}'.format(longname, i),
             roles=['node'],
             pub_net=pub_net_id,
             priv_net=priv_net['id'],
@@ -280,6 +284,8 @@ def create_command(client, args):
             node.userdata.gen_kubeconfig(c, 'host-' + master.ip.replace('.', '-'))
         node.userdata.gen_flanneld_config('host-' + master.ip.replace('.', '-'))
         nodes.append(node)
+
+    print('\t[OK]')
 
     print('Creating instances', end='', flush=True)
     try:
@@ -297,6 +303,18 @@ def create_command(client, args):
 
     print('\t[OK]')
 
+    # TODO: generate local kubeconfig file
+    #print('Creating local kubeconfig', end='', flush=True)
+    #cli_key, cli_crt = k8s_ca.create_client_pair('system:masters', getlogin())
+    #cli_key_pem = dump_privatekey(FILETYPE_PEM, cli_key)
+    #cli_crt_pem = dump_certificate(FILETYPE_PEM, cli_crt)
+    #ca_crt_pem = dump_certificate(FILETYPE_PEM, k8s_ca.cert)
+
+    #with open(expanduser('~/.kube/kovh-{}-config'.format(name)), 'w') as kubeconfig:
+    #    print((cli_key_pem + cli_crt_pem + ca_crt_pem).decode(), file=kubeconfig)
+
+    #print('\t[OK]')
+    #print('~/.kube/kovh-{}-config'.format(name))
 
 def destroy_command(client, args):
     """Destroy a Kubernetes cluster
@@ -313,10 +331,10 @@ def destroy_command(client, args):
         print('Missing parameters from configuration:', ', '.join(["'{}'".format(x) for x in missing_params ]))
         exit(1)
 
-    name = 'kovh:{}:'.format(args['--name'])
+    longname = 'kovh:{}:'.format(args['--name'])
 
     try:
-        del_instances = infra.get_cluster_instances(client, name)
+        del_instances = infra.get_cluster_instances(client, longname)
     except APIError as e:
         print(e)
         exit(1)
@@ -339,11 +357,10 @@ def destroy_command(client, args):
             while not instance_deleted:
                 try:
                     instance_detail = client.get('/cloud/project/{}/instance/{}'.format(client._project, inst['id']))
-                except ResourceNotFoundError:
-                    instance_deleted = True
-                else:
                     if instance_detail.get('status') == 'DELETED':
                         instance_deleted = True
+                except ResourceNotFoundError:
+                    instance_deleted = True
 
                 print('.', end='', flush=True)
                 sleep(1)
@@ -351,7 +368,7 @@ def destroy_command(client, args):
         print('\t[OK]')
 
     try:
-        del_networks = infra.get_cluster_networks(client, name)
+        del_networks = infra.get_cluster_networks(client, longname)
     except APIError as e:
         print(e)
         exit(1)

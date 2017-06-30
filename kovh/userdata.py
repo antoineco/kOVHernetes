@@ -38,7 +38,7 @@ files = {
 
 class UserData:
 
-    def __init__(self, k8s_ver='1.6.6', img_suffix='coreos.1'):
+    def __init__(self, k8s_ver='1.7.0', img_suffix='coreos.0'):
         self.k8s_ver = k8s_ver
         self.img_suffix = img_suffix
 

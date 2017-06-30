@@ -25,15 +25,18 @@ Creating private network 'kovh:cursedfleet:' with VLAN id 0	[OK]
 Waiting for readiness of private network 'kovh:cursedfleet:'..	[OK]
 Creating subnet	[OK]
 Creating Certificate Authority	[OK]
+Generating User Data	[OK]
 Creating instances	[OK]
+Creating local kubeconfig	[OK]
 ```
 
 *What just happened?*
 
 1. A private network was created in the project's vRack with the next available VLAN id
-2. The subnet 192.168.0.0/24 was created within this private network, in the configured region
+2. The subnet 192.168.0.0/27 was created within this private network, in the configured region
 3. A Certificate Authority was generated locally and in memory, it will enable PKI authentication within the cluster
 4. The creation of 3 new instances was initiated
+5. A configuration file for the `kubectl` client tool was written locally
 
 You can see the instances being created using the `project instances` subcommand.
 
@@ -42,7 +45,7 @@ You can see the instances being created using the `project instances` subcommand
 
 ID                                    NAME                      STATUS  REGION  IP                         
 ccdf2160-6481-4262-b4d1-4d73574d96c5  kovh:cursedfleet::node02  BUILD   GRA3    147.135.193.252,192.168.0.12
-2299a23e-e116-4380-af49-0fa91e9170dc  kovh:cursedfleet::node01  BUILD   GRA3    147.135.193.25,192.168.0.11
+2299a23e-e116-4380-af49-0fa91e9170dc  kovh:cursedfleet::node01  BUILD   GRA3    147.135.193.250,192.168.0.11
 17c23e1f-4c1c-4dd2-a2a8-f7cd9871eb0a  kovh:cursedfleet::master  ACTIVE  GRA3    147.135.193.248,192.168.0.10
 ```
 
@@ -64,7 +67,7 @@ SSH key configured in your project. Let's start by logging in to the `master` in
 ❯ ssh core@147.135.193.248
 
 Container Linux by CoreOS stable (1409.5.0)
-core@host-192-168-0-1 ~ $
+core@host-192.168.0.10 ~ $
 ```
 
 The following critical services should be in the process of starting, or already started:
@@ -76,7 +79,7 @@ The following critical services should be in the process of starting, or already
 Ensure all 3 services started without errors with:
 
 ```
-core@host-192-168-0-1 ~ $ systemctl status kubelet etcd-member flanneld
+core@host-192.168.0.10 ~ $ systemctl status kubelet etcd-member flanneld
 
 ● kubelet.service - Kubernetes kubelet (System Application Container)
    Loaded: loaded (/etc/systemd/system/kubelet.service; enabled; vendor preset: enabled)
@@ -102,13 +105,13 @@ Additionally, you should be able to list the [rkt][rkt] containers running these
 containerized!).
 
 ```
-core@host-192-168-0-1 ~ $ rkt list
+core@host-192.168.0.10 ~ $ rkt list
 
 UUID      APP        IMAGE NAME                                STATE
-079c62f6  hyperkube  quay.io/coreos/hyperkube:v1.6.6_coreos.1  running
-154b06de  flannel    quay.io/coreos/flannel:v0.7.0             running
-cd973167  flannel    quay.io/coreos/flannel:v0.7.0             exited
-d704531f  etcd       quay.io/coreos/etcd:v3.0.10               running
+079c62f6  hyperkube  quay.io/coreos/hyperkube:v1.7.0_coreos.0  running
+154b06de  flannel    quay.io/coreos/flannel:v0.7.1             running
+cd973167  flannel    quay.io/coreos/flannel:v0.7.1             exited
+d704531f  etcd       quay.io/coreos/etcd:v3.1.6                running
 ```
 
 The `kubelet` component should have started all pods described within the `/etc/kubernetes/manifests` directory:
@@ -122,7 +125,7 @@ The `kubelet` component should have started all pods described within the `/etc/
 These pods are backed by Docker, so you should be able to list them as well:
 
 ```
-core@host-192-168-0-1 ~ $ docker ps
+core@host-192.168.0.10 ~ $ docker ps
 
 CONTAINER ID   IMAGE                         COMMAND                  NAMES
 fe5d87cf1ed7   quay.io/coreos/hyperkube@...  "kube-controller-mana"   k8s_kube-controller-manager_...
@@ -146,18 +149,18 @@ Your cluster is composed of **3** nodes, one being the master you're currently c
 registered with the API server.
 
 ```
-core@host-192-168-0-1 ~ $ kubectl get nodes
+core@host-192.168.0.10 ~ $ kubectl get nodes
 
-NAME               STATUS   AGE   VERSION
-host-192-168-0-1   Ready    8m    v1.6.6+coreos.1
-host-192-168-0-3   Ready    8m    v1.6.6+coreos.1
-host-192-168-0-4   Ready    8m    v1.6.6+coreos.1
+NAME                STATUS   AGE   VERSION
+host-192.168.0.10   Ready    8m    v1.7.0+coreos.0
+host-192.168.0.11   Ready    8m    v1.7.0+coreos.0
+host-192.168.0.12   Ready    8m    v1.7.0+coreos.0
 ```
 
 It has some default [Namespaces][namespace] pre-created.
 
 ```
-core@host-192-168-0-1 ~ $ kubectl get namespaces
+core@host-192.168.0.10 ~ $ kubectl get namespaces
 
 NAME          STATUS    AGE
 default       Active    8m
@@ -169,18 +172,18 @@ One of these namespaces is `kube-system`. By convention it contains all the pods
 well as the cluster addons.
 
 ```
-core@host-192-168-0-1 ~ $ kubectl -n kube-system get pods
+core@host-192.168.0.10 ~ $ kubectl -n kube-system get pods
 
-NAME                                       READY     STATUS    RESTARTS   AGE
-kube-addon-manager-host-192-168-0-1        1/1       Running   0          6m
-kube-apiserver-host-192-168-0-1            1/1       Running   0          7m
-kube-controller-manager-host-192-168-0-1   1/1       Running   0          6m
-kube-dns-806549836-bc2l4                   3/3       Running   0          7m
-kube-proxy-host-192-168-0-1                1/1       Running   0          6m
-kube-proxy-host-192-168-0-3                1/1       Running   0          6m
-kube-proxy-host-192-168-0-4                1/1       Running   0          7m
-kube-scheduler-host-192-168-0-1            1/1       Running   0          6m
-kubernetes-dashboard-2917854236-wkpv6      1/1       Running   0          7m
+NAME                                        READY     STATUS    RESTARTS   AGE
+kube-addon-manager-host-192.168.0.10        1/1       Running   0          6m
+kube-apiserver-host-192.168.0.10            1/1       Running   0          7m
+kube-controller-manager-host-192.168.0.10   1/1       Running   0          6m
+kube-dns-806549836-bc2l4                    3/3       Running   0          7m
+kube-proxy-host-192.168.0.10                1/1       Running   0          6m
+kube-proxy-host-192.168.0.11                1/1       Running   0          6m
+kube-proxy-host-192.168.0.12                1/1       Running   0          7m
+kube-scheduler-host-192.168.0.10            1/1       Running   0          6m
+kubernetes-dashboard-2917854236-wkpv6       1/1       Running   0          7m
 ```
 
 Did you notice the name of these pods? They correspond exactly to the output of the `docker ps` command executed in the
@@ -190,7 +193,7 @@ Now go ahead and create a replicated application. [`nginx`][nginx-hub] is often 
 have 5 replicas.
 
 ```
-core@host-192-168-0-1 ~ $ kubectl run nginx --image=nginx --replicas=5
+core@host-192.168.0.10 ~ $ kubectl run nginx --image=nginx --replicas=5
 
 deployment "nginx" created
 ```
@@ -199,7 +202,7 @@ You did not explicitely define any namespace on the command line, so all resourc
 namespace.
 
 ```
-core@host-192-168-0-1 ~ $ kubectl get pods
+core@host-192.168.0.10 ~ $ kubectl get pods
 
 NAME                     READY     STATUS    RESTARTS   AGE
 nginx-2371676037-b04l0   1/1       Running   0          1m
@@ -213,7 +216,7 @@ In Kubernetes, the lifecycle of a group of pods is usually controlled by a [Depl
 hood.
 
 ```
-core@host-192-168-0-1 ~ $ kubectl get deployments
+core@host-192.168.0.10 ~ $ kubectl get deployments
 
 NAME      DESIRED   CURRENT   UP-TO-DATE   AVAILABLE   AGE
 nginx     5         5         5            5           1m
@@ -224,12 +227,12 @@ the defined state by, for example, deleting a pod, the controller will recreate 
 match the desired state.
 
 ```
-core@host-192-168-0-1 ~ $ kubectl delete pod nginx-2371676037-b04l0
+core@host-192.168.0.10 ~ $ kubectl delete pod nginx-2371676037-b04l0
 
 pod "nginx-2371676037-b04l0" deleted
 ```
 ```
-core@host-192-168-0-1 ~ $ kubectl get pods
+core@host-192.168.0.10 ~ $ kubectl get pods
 
 NAME                     READY     STATUS        RESTARTS   AGE
 nginx-2371676037-762rg   1/1       Running       0          12s
@@ -249,10 +252,10 @@ Passing the `-o wide` flag to the previous command will show you the **internal*
 the node it's running on.
 
 ```
-core@host-192-168-0-1 ~ $ kubectl get pods -o wide
+core@host-192.168.0.10 ~ $ kubectl get pods -o wide
 
 NAME                     READY   STATUS    RESTARTS   AGE   IP            NODE
-nginx-2371676037-762rg   1/1     Running   0          5m    172.17.29.3   host-192-168-0-4
+nginx-2371676037-762rg   1/1     Running   0          5m    172.17.29.3   host-192.168.0.12
 [...]
 ```
 
@@ -263,7 +266,7 @@ However, how can you expose these pods to the outside world? Simple, create a [S
 created previously.
 
 ```
-core@host-192-168-0-1 ~ $ kubectl expose deployment nginx --port=80 --target-port=80 --type=NodePort
+core@host-192.168.0.10 ~ $ kubectl expose deployment nginx --port=80 --target-port=80 --type=NodePort
 
 service "nginx" exposed
 ```
@@ -276,7 +279,7 @@ random high port** on every cluster node.
 [dfile-port80]: https://github.com/nginxinc/docker-nginx/blob/c769ad8ab21dfb374fa33d8fb9d0822d0fa8d2e5/mainline/stretch/Dockerfile#L39
 
 ```
-core@host-192-168-0-1 ~ $ kubectl get svc nginx
+core@host-192.168.0.10 ~ $ kubectl get svc nginx
 
 NAME    CLUSTER-IP   EXTERNAL-IP   PORT(S)        AGE
 nginx   10.0.0.95    <nodes>       80:30468/TCP   12s

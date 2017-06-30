@@ -80,17 +80,17 @@ Run the following command inside the repository to install the project dependenc
 
 ## Disclaimer
 
-kOVHernetes is a toy project written for testing purposes. **Use at your own risk**.
+kOVHernetes is a toy project written for testing purposes. It is **not** supported by [OVH][ovh] in any manner.
 
-* It is **not** supported by [OVH][ovh] in any manner.
-* Several security aspects have been omitted for the sake of simplicity, making it unsuitable for production
-  environments.
+Although I strive to enforce a [reasonably high level of security][security] by default, no security audit has been
+performed on this software or the elements of infrastructure it helps to generate.
+
+**Use at your own risk**.
 
 ## Roadmap
 
 * [ ] Secure apiserver -> kubelet communications
 * [ ] `list` command to display clusters
-* [ ] auto-generated local `kubectl` configuration
 * [ ] Master HA
 * [ ] CNI networking
 
@@ -107,3 +107,4 @@ kOVHernetes is a toy project written for testing purposes. **Use at your own ris
 [cryp-req]: https://cryptography.io/en/latest/installation/#building-cryptography-on-linux
 [dash]: docs/images/project_dashboard.png
 [ovh]: https://www.ovh.com/
+[security]: docs/architecture.md#security
