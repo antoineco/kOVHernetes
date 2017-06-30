@@ -82,6 +82,39 @@ class CA:
 
         return cert
 
+    def create_server_cert(self, key, o, cn, san=[]):
+        """Issue a X.509 server certificate"""
+
+        cert = crypto.X509()
+        cert.set_serial_number(self.__next_serial)
+        cert.set_version(2)
+        cert.set_pubkey(key)
+        cert.gmtime_adj_notBefore(0)
+        cert.gmtime_adj_notAfter(365*24*60*60)
+
+        cert_subject = cert.get_subject()
+        cert_subject.O = o
+        cert_subject.OU = 'kOVHernetes'
+        cert_subject.CN = cn
+        cert.set_issuer(self.cert.get_issuer())
+
+        cert_ext = []
+        cert_ext.append(crypto.X509Extension(b'subjectKeyIdentifier', False, b'hash', cert))
+        cert_ext.append(crypto.X509Extension(b'authorityKeyIdentifier', False, b'keyid,issuer:always', issuer=cert))
+        cert_ext.append(crypto.X509Extension(b'basicConstraints', False, b'CA:FALSE'))
+        cert_ext.append(crypto.X509Extension(b'keyUsage', True, b'digitalSignature, keyEncipherment'))
+        cert_ext.append(crypto.X509Extension(b'extendedKeyUsage', True, b'serverAuth'))
+        if san:
+            cert_ext.append(crypto.X509Extension(b'subjectAltName', False, ','.join(san).encode()))
+        cert.add_extensions(cert_ext)
+
+        # sign cert with CA key
+        cert.sign(self.key, 'sha256')
+
+        type(self).__next_serial += 1
+
+        return cert
+
     def create_client_pair(self, o, cn):
         """Issue a X.509 client key/certificate pair"""
 

@@ -14,7 +14,8 @@
         "command": [
           "kube-scheduler",
           "--address=127.0.0.1",
-          "--kubeconfig=/kubeconfig"
+          "--kubeconfig=/etc/kubernetes/kubeconfig",
+          "--profiling=false"
         ],
         "resources": {
           "requests": {
@@ -38,13 +39,23 @@
         },
         "volumeMounts": [
           {
-            "mountPath": "/kubeconfig",
+            "mountPath": "/etc/kubernetes/kubeconfig",
             "name": "kubeconfig",
             "readOnly": true
           },
           {
-            "mountPath": "/tls",
-            "name": "tls-certs",
+            "mountPath": "/etc/kubernetes/tls",
+            "name": "k8s-tls",
+            "readOnly": true
+          },
+          {
+            "mountPath": "/etc/ssl/certs",
+            "name": "ssl-certs",
+            "readOnly": true
+          },
+          {
+            "mountPath": "/usr/share/ca-certificates",
+            "name": "ca-certs",
             "readOnly": true
           }
         ]
@@ -61,7 +72,19 @@
         "hostPath": {
           "path": "/etc/kubernetes/tls"
         },
-        "name": "tls-certs"
+        "name": "k8s-tls"
+      },
+      {
+        "hostPath": {
+          "path": "/etc/ssl/certs"
+        },
+        "name": "ssl-certs"
+      },
+      {
+        "hostPath": {
+          "path": "/usr/share/ca-certificates"
+        },
+        "name": "ca-certs"
       }
     ]
   }

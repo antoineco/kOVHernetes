@@ -74,21 +74,16 @@ certificates are used to authenticate client components against server component
 interactions:
 
 :key: &nbsp; X.509 auth  
-:o: &nbsp; Work in progress
 
 | *Client* / *Server* | kube-api | kubelet | kube-&ast; | etcd  | flannel |
 |:-------------------:|:--------:|:-------:|:----------:|:-----:|:-------:|
-| **kube-api**        | -        | :o:     |            | :key: |         |
+| **kube-api**        | -        | :key:   |            | :key: |         |
 | **kubelet**         | :key:    | -       |            |       |         |
 | **kube-&ast;**      | :key:    |         | -          |       |         |
 | **etcd**            |          |         |            | -     |         |
 | **flannel**         |          |         |            | :key: | -       |
 
 \* *`kube-*` includes `kube-scheduler`, `kube-controller-manager` and `kube-proxy`*
-
-<!-- TODO
-https://kubernetes.io/docs/admin/kubelet-authentication-authorization/
--->
 
 ### Authorization
 

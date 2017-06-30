@@ -9,7 +9,6 @@ spec:
   hostNetwork: true
   containers:
   - name: kube-addon-manager
-    #image: quay.io/coreos/kube-addon-manager-amd64:v6.4-beta.2
     image: gcr.io/google-containers/kube-addon-manager-amd64:v6.4-beta.2
     resources:
       requests:

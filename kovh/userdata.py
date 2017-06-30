@@ -100,7 +100,7 @@ class UserData:
         """Generate kubeconfig"""
 
         kubeconfig = loads(files['kubeconfig'].decode(), object_pairs_hook=OrderedDict)
-        kubeconfig['users'][0]['user']['client-certificate'] = 'tls/{}.crt'.format(component)
+        kubeconfig['users'][0]['user']['client-certificate'] = 'tls/client/{}.crt'.format(component)
         kubeconfig['clusters'][0]['cluster']['server'] = 'https://' + server + ':6443'
 
         kubeconfig = compress((dumps(kubeconfig, indent=2) + '\n').encode())

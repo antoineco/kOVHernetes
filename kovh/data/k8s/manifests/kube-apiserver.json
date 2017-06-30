@@ -18,15 +18,21 @@
           "--anonymous-auth=false",
           "--apiserver-count=1",
           "--authorization-mode=AlwaysAllow",
-          "--client-ca-file=/tls/ca.pem",
-          "--etcd-cafile=/tls/ca.pem",
-          "--etcd-certfile=/tls/etcdclient.crt",
-          "--etcd-keyfile=/tls/client.key",
+          "--client-ca-file=/etc/kubernetes/tls/ca.pem",
+          "--etcd-cafile=/etc/kubernetes/tls/ca.pem",
+          "--etcd-certfile=/etc/kubernetes/tls/client/etcd.crt",
+          "--etcd-keyfile=/etc/kubernetes/tls/host.key",
           "--etcd-servers=https://localhost:2379",
-          "--service-cluster-ip-range=10.0.0.0/24",
-          "--tls-ca-file=/tls/ca.pem",
-          "--tls-cert-file=/tls/apiserver.crt",
-          "--tls-private-key-file=/tls/apiserver.key"
+          "--kubelet-certificate-authority=/etc/kubernetes/tls/ca.pem",
+          "--kubelet-client-certificate=/etc/kubernetes/tls/client/kubelet.crt",
+          "--kubelet-client-key=/etc/kubernetes/tls/host.key",
+          "--profiling=false",
+          "--repair-malformed-updates=false",
+          "--service-account-lookup",
+          "--service-cluster-ip-range=10.0.0.0/16",
+          "--tls-ca-file=/etc/kubernetes/tls/ca.pem",
+          "--tls-cert-file=/etc/kubernetes/tls/server/apiserver.crt",
+          "--tls-private-key-file=/etc/kubernetes/tls/host.key"
         ],
         "ports": [
           {
@@ -45,8 +51,18 @@
         },
         "volumeMounts": [
           {
-            "mountPath": "/tls",
-            "name": "tls-certs",
+            "mountPath": "/etc/kubernetes/tls",
+            "name": "k8s-tls",
+            "readOnly": true
+          },
+          {
+            "mountPath": "/etc/ssl/certs",
+            "name": "ssl-certs",
+            "readOnly": true
+          },
+          {
+            "mountPath": "/usr/share/ca-certificates",
+            "name": "ca-certs",
             "readOnly": true
           }
         ]
@@ -57,7 +73,19 @@
         "hostPath": {
           "path": "/etc/kubernetes/tls"
         },
-        "name": "tls-certs"
+        "name": "k8s-tls"
+      },
+      {
+        "hostPath": {
+          "path": "/etc/ssl/certs"
+        },
+        "name": "ssl-certs"
+      },
+      {
+        "hostPath": {
+          "path": "/usr/share/ca-certificates"
+        },
+        "name": "ca-certs"
       }
     ]
   }

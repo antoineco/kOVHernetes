@@ -16,15 +16,24 @@ Environment="RKT_RUN_ARGS=--uuid-file-save=/var/lib/coreos/kubelet-wrapper.uuid 
 
 ExecStartPre=/usr/bin/mkdir --parents /var/lib/coreos
 ExecStartPre=-/usr/bin/rkt rm --uuid-file=/var/lib/coreos/kubelet-wrapper.uuid
+ExecStartPre=/usr/bin/bash -c \
+  "cat /etc/kubernetes/tls/server/kubelet.crt /etc/kubernetes/tls/ca.pem > /etc/kubernetes/tls/server/kubeletbundle.crt"
 ExecStart=/usr/lib/coreos/kubelet-wrapper \
   --address=${COREOS_OPENSTACK_IPV4_LOCAL} \
-  --kubeconfig=/etc/kubernetes/kubeconfig-kubelet \
-  --require-kubeconfig \
-  --pod-manifest-path=/etc/kubernetes/manifests \
   --allow-privileged \
+  --anonymous-auth=false \
+  --authentication-token-webhook \
+  --authorization-mode=Webhook \
+  --cadvisor-port=0 \
+  --client-ca-file=/etc/kubernetes/tls/ca.pem \
   --cluster-dns=10.0.0.10 \
   --cluster-domain=cluster.local \
-  --cadvisor-port=0
+  --read-only-port=0 \
+  --kubeconfig=/etc/kubernetes/kubeconfig-kubelet \
+  --pod-manifest-path=/etc/kubernetes/manifests \
+  --require-kubeconfig \
+  --tls-cert-file=/etc/kubernetes/tls/server/kubeletbundle.crt \
+  --tls-private-key-file=/etc/kubernetes/tls/host.key
 ExecStop=-/usr/bin/rkt stop --uuid-file=/var/lib/coreos/kubelet-wrapper.uuid
 
 [Install]

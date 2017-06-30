@@ -15,13 +15,15 @@
           "kube-controller-manager",
           "--address=127.0.0.1",
           "--cluster-cidr=172.17.0.0/16",
-          "--cluster-signing-cert-file=/tls/ca.pem",
-          "--cluster-signing-key-file=/tls/ca.key",
+          "--cluster-signing-cert-file=/etc/kubernetes/tls/ca.pem",
+          "--cluster-signing-key-file=/etc/kubernetes/tls/ca.key",
           "--configure-cloud-routes=false",
-          "--kubeconfig=/kubeconfig",
-          "--root-ca-file=/tls/ca.pem",
-          "--service-account-private-key-file=/tls/apiserver.key",
-          "--service-cluster-ip-range=10.0.0.0/24"
+          "--kubeconfig=/etc/kubernetes/kubeconfig",
+          "--profiling=false",
+          "--root-ca-file=/etc/kubernetes/tls/ca.pem",
+          "--service-account-private-key-file=/etc/kubernetes/tls/host.key",
+          "--service-cluster-ip-range=10.0.0.0/16",
+          "--use-service-account-credentials"
         ],
         "resources": {
           "requests": {
@@ -45,13 +47,23 @@
         },
         "volumeMounts": [
           {
-            "mountPath": "/kubeconfig",
+            "mountPath": "/etc/kubernetes/kubeconfig",
             "name": "kubeconfig",
             "readOnly": true
           },
           {
-            "mountPath": "/tls",
-            "name": "tls-certs",
+            "mountPath": "/etc/kubernetes/tls",
+            "name": "k8s-tls",
+            "readOnly": true
+          },
+          {
+            "mountPath": "/etc/ssl/certs",
+            "name": "ssl-certs",
+            "readOnly": true
+          },
+          {
+            "mountPath": "/usr/share/ca-certificates",
+            "name": "ca-certs",
             "readOnly": true
           }
         ]
@@ -68,7 +80,19 @@
         "hostPath": {
           "path": "/etc/kubernetes/tls"
         },
-        "name": "tls-certs"
+        "name": "k8s-tls"
+      },
+      {
+        "hostPath": {
+          "path": "/etc/ssl/certs"
+        },
+        "name": "ssl-certs"
+      },
+      {
+        "hostPath": {
+          "path": "/usr/share/ca-certificates"
+        },
+        "name": "ca-certs"
       }
     ]
   }

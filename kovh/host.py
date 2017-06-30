@@ -30,54 +30,67 @@ class Host:
             # Dump X.509 CA cert
             ca_crt_pem = dump_certificate(FILETYPE_PEM, ca.cert)
 
+            # we generate a single RSA key per host due to User Data size limit of 65535 bytes (base64-encoded)
+            key = ca.create_key()
+            key_pem = dump_privatekey(FILETYPE_PEM, key)
+
             # TLS client certificates
-            # we use a single client key per host due to User Data size limit of 65535 bytes (base64-encoded)
-            client_key = ca.create_key()
-            client_key_pem = dump_privatekey(FILETYPE_PEM, client_key)
-            kubelet_crt = ca.create_client_cert(client_key, 'system:nodes', 'system:node:host-' + ip.replace('.', '-'))
-            kubelet_crt_pem = dump_certificate(FILETYPE_PEM, kubelet_crt)
-            proxy_crt = ca.create_client_cert(client_key, 'Kubernetes', 'system:kube-proxy')
-            proxy_crt_pem = dump_certificate(FILETYPE_PEM, proxy_crt)
-            etcd_client_crt = ca.create_client_cert(client_key, 'etcd', 'root')
+            kubelet_client_crt = ca.create_client_cert(key, 'system:nodes', 'system:node:host-' + ip.replace('.', '-'))
+            kubelet_client_crt_pem = dump_certificate(FILETYPE_PEM, kubelet_client_crt)
+            proxy_client_crt = ca.create_client_cert(key, 'Kubernetes', 'system:kube-proxy')
+            proxy_client_crt_pem = dump_certificate(FILETYPE_PEM, proxy_client_crt)
+            etcd_client_crt = ca.create_client_cert(key, 'etcd', 'root')
             etcd_client_crt_pem = dump_certificate(FILETYPE_PEM, etcd_client_crt)
+
+            # TLS server certificates
+            kubelet_server_crt = ca.create_server_cert(key, 'Kubernetes', 'host-' + ip.replace('.', '-'))
+            kubelet_server_crt_pem = dump_certificate(FILETYPE_PEM, kubelet_server_crt)
 
             self.userdata.add_files ([
                 {
                     'filesystem': 'root',
-                    'path': '/etc/kubernetes/tls/ca.pem',
+                    'path': '/etc/kubernetes/tls/host.key',
                     'mode': 416, # 0640
+                    'contents': {
+                        'source': 'data:,' + quote(key_pem)
+                    }
+                },
+                {
+                    'filesystem': 'root',
+                    'path': '/etc/kubernetes/tls/ca.pem',
+                    'mode': 420, # 0644
                     'contents': {
                         'source': 'data:,' + quote(ca_crt_pem)
                     }
                 },
                 {
                     'filesystem': 'root',
-                    'path': '/etc/kubernetes/tls/client.key',
-                    'mode': 384, # 0600
+                    'path': '/etc/kubernetes/tls/client/kubelet.crt',
+                    'mode': 420, # 0644
                     'contents': {
-                        'source': 'data:,' + quote(client_key_pem)
+                        'source': 'data:,' + quote(kubelet_client_crt_pem)
                     }
                 },
                 {
                     'filesystem': 'root',
-                    'path': '/etc/kubernetes/tls/kubelet.crt',
-                    'mode': 416, # 0640
+                    'path': '/etc/kubernetes/tls/server/kubelet.crt',
+                    'mode': 420, # 0644
                     'contents': {
-                        'source': 'data:,' + quote(kubelet_crt_pem)
+                        'source': 'data:,' + quote(kubelet_server_crt_pem)
                     }
                 },
                 {
                     'filesystem': 'root',
-                    'path': '/etc/kubernetes/tls/proxy.crt',
-                    'mode': 416, # 0640
+                    'path': '/etc/kubernetes/tls/client/proxy.crt',
+                    'mode': 420, # 0644
                     'contents': {
-                        'source': 'data:,' + quote(proxy_crt_pem)
+                        'source': 'data:,' + quote(proxy_client_crt_pem)
                     }
                 },
                 {
                     'filesystem': 'root',
-                    'path': '/etc/kubernetes/tls/etcdclient.crt',
-                    'mode': 416, # 0640
+                    'path': '/etc/kubernetes/tls/client/etcd.crt',
+                    'mode': 420, # 0644
                     'contents': {
                         'source': 'data:,' + quote(etcd_client_crt_pem)
                     }
@@ -103,8 +116,7 @@ class Host:
                 'DNS:' + 'host-' + ip.replace('.', '-'),
                 'IP:' + ip
             ]
-            api_key, api_crt = ca.create_server_pair('Kubernetes', 'apiserver', api_san)
-            api_key_pem = dump_privatekey(FILETYPE_PEM, api_key)
+            api_crt = ca.create_server_cert(key, 'Kubernetes', 'apiserver', api_san)
             api_crt_pem = dump_certificate(FILETYPE_PEM, api_crt)
 
             # TLS server pair for etcd member
@@ -114,72 +126,52 @@ class Host:
                 'DNS:' + 'host-' + ip.replace('.', '-'),
                 'IP:' + ip
             ]
-            etcd_member_key, etcd_member_crt = ca.create_server_pair('etcd', 'member', etcd_san)
-            etcd_member_key_pem = dump_privatekey(FILETYPE_PEM, etcd_member_key)
+            etcd_member_crt = ca.create_server_cert(key, 'etcd', 'member', etcd_san)
             etcd_member_crt_pem = dump_certificate(FILETYPE_PEM, etcd_member_crt)
 
             # TLS client certificates
-            cm_crt = ca.create_client_cert(client_key, 'Kubernetes', 'system:kube-controller-manager')
+            cm_crt = ca.create_client_cert(key, 'Kubernetes', 'system:kube-controller-manager')
             cm_crt_pem = dump_certificate(FILETYPE_PEM, cm_crt)
-            scheduler_crt = ca.create_client_cert(client_key, 'Kubernetes', 'system:kube-scheduler')
+            scheduler_crt = ca.create_client_cert(key, 'Kubernetes', 'system:kube-scheduler')
             scheduler_crt_pem = dump_certificate(FILETYPE_PEM, scheduler_crt)
 
             self.userdata.add_files ([
                 {
                     'filesystem': 'root',
                     'path': '/etc/kubernetes/tls/ca.key',
-                    'mode': 384, # 0600
+                    'mode': 416, # 0640
                     'contents': {
                         'source': 'data:,' + quote(ca_key_pem)
                     }
                 },
                 {
                     'filesystem': 'root',
-                    'path': '/etc/kubernetes/tls/apiserver.key',
-                    'mode': 384, # 0600
-                    'contents': {
-                        'source': 'data:,' + quote(api_key_pem)
-                    }
-                },
-                {
-                    'filesystem': 'root',
-                    'path': '/etc/kubernetes/tls/apiserver.crt',
-                    'mode': 416, # 0640
+                    'path': '/etc/kubernetes/tls/server/apiserver.crt',
+                    'mode': 420, # 0644
                     'contents': {
                         'source': 'data:,' + quote(api_crt_pem)
                     }
                 },
                 {
                     'filesystem': 'root',
-                    'path': '/etc/kubernetes/tls/etcd.key',
-                    'mode': 384, # 0600
-                    'user': {
-                        'id': 232 # etcd user id
-                    },
-                    'contents': {
-                        'source': 'data:,' + quote(etcd_member_key_pem)
-                    }
-                },
-                {
-                    'filesystem': 'root',
-                    'path': '/etc/kubernetes/tls/etcd.crt',
-                    'mode': 416, # 0640
+                    'path': '/etc/kubernetes/tls/server/etcd.crt',
+                    'mode': 420, # 0644
                     'contents': {
                         'source': 'data:,' + quote(etcd_member_crt_pem)
                     }
                 },
                 {
                     'filesystem': 'root',
-                    'path': '/etc/kubernetes/tls/controller-manager.crt',
-                    'mode': 416, # 0640
+                    'path': '/etc/kubernetes/tls/client/controller-manager.crt',
+                    'mode': 420, # 0644
                     'contents': {
                         'source': 'data:,' + quote(cm_crt_pem)
                     }
                 },
                 {
                     'filesystem': 'root',
-                    'path': '/etc/kubernetes/tls/scheduler.crt',
-                    'mode': 416, # 0640
+                    'path': '/etc/kubernetes/tls/client/scheduler.crt',
+                    'mode': 420, # 0644
                     'contents': {
                         'source': 'data:,' + quote(scheduler_crt_pem)
                     }
