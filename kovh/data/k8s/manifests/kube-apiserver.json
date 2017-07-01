@@ -24,7 +24,7 @@
           "--etcd-keyfile=/etc/kubernetes/tls/host.key",
           "--etcd-servers=https://localhost:2379",
           "--kubelet-certificate-authority=/etc/kubernetes/tls/ca.pem",
-          "--kubelet-client-certificate=/etc/kubernetes/tls/client/kubelet.crt",
+          "--kubelet-client-certificate=/etc/kubernetes/tls/client/apiserver.crt",
           "--kubelet-client-key=/etc/kubernetes/tls/host.key",
           "--profiling=false",
           "--repair-malformed-updates=false",

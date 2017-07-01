@@ -105,7 +105,7 @@ class Host:
             ca_key_pem = dump_privatekey(FILETYPE_PEM, ca.key)
 
             # TLS server pair for kube API server
-            api_san = [
+            apiserver_san = [
                 'DNS:kubernetes.default.svc.cluster.local',
                 'DNS:kubernetes.default.svc',
                 'DNS:kubernetes.default',
@@ -116,8 +116,8 @@ class Host:
                 'DNS:' + 'host-' + ip.replace('.', '-'),
                 'IP:' + ip
             ]
-            api_crt = ca.create_server_cert(key, 'Kubernetes', 'apiserver', api_san)
-            api_crt_pem = dump_certificate(FILETYPE_PEM, api_crt)
+            apiserver_crt = ca.create_server_cert(key, 'Kubernetes', 'apiserver', apiserver_san)
+            apiserver_crt_pem = dump_certificate(FILETYPE_PEM, apiserver_crt)
 
             # TLS server pair for etcd member
             etcd_san = [
@@ -134,6 +134,9 @@ class Host:
             cm_crt_pem = dump_certificate(FILETYPE_PEM, cm_crt)
             scheduler_crt = ca.create_client_cert(key, 'Kubernetes', 'system:kube-scheduler')
             scheduler_crt_pem = dump_certificate(FILETYPE_PEM, scheduler_crt)
+            apiserver_client_crt = ca.create_client_cert(key, 'system:masters', 'apiserver:host-' + ip.replace('.', '-'))
+            apiserver_client_crt_pem = dump_certificate(FILETYPE_PEM, apiserver_client_crt)
+
 
             self.userdata.add_files ([
                 {
@@ -149,7 +152,7 @@ class Host:
                     'path': '/etc/kubernetes/tls/server/apiserver.crt',
                     'mode': 420, # 0644
                     'contents': {
-                        'source': 'data:,' + quote(api_crt_pem)
+                        'source': 'data:,' + quote(apiserver_crt_pem)
                     }
                 },
                 {
@@ -174,6 +177,14 @@ class Host:
                     'mode': 420, # 0644
                     'contents': {
                         'source': 'data:,' + quote(scheduler_crt_pem)
+                    }
+                },
+                {
+                    'filesystem': 'root',
+                    'path': '/etc/kubernetes/tls/client/apiserver.crt',
+                    'mode': 420, # 0644
+                    'contents': {
+                        'source': 'data:,' + quote(apiserver_client_crt_pem)
                     }
                 }
             ])
