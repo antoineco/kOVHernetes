@@ -182,12 +182,8 @@ def get_coreos_images(client):
         'region': client._region
     }
 
-    # TODO: revisit once OVH updates its image
-    #for img in client.get('/cloud/project/{}/image'.format(client._project), **params):
-    #    if 'CoreOS' in img['name']:
-    #        imgs.append(img['id'])
-    for img in client.get('/cloud/project/{}/snapshot'.format(client._project), **params):
-        if 'Container Linux' in img['name']:
+    for img in client.get('/cloud/project/{}/image'.format(client._project), **params):
+        if 'CoreOS' in img['name']:
             imgs.append(img['id'])
 
     return imgs

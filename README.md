@@ -18,28 +18,6 @@ pre-configured using [Ignition][ignition], including a [flannel][flannel] overla
 
 ## Prerequisites
 
-### :warning: CoreOS Container Linux image
-
-The *Container Linux* image available in the OVH image service is outdated and misses features required by the `kovh`
-client (Ignition OpenStack compatibility, *rkt* wrapper scripts).
-
-Until this problem is tackled by OVH, please follow the instructions at [Running CoreOS Container Linux on
-OpenStack][coreos-ostack] to download the latest Stable release, then upload it to your OVH account using the [openstack
-client][ostack-cli]:
-
-```sh
-❯ openstack image create \
-    --disk-format 'qcow2' \
-    --file 'coreos_production_openstack_image.img' \
-    --property os-distro='container' \
-    --property os-version='1409.5.0' \
-    --property image_original_user='core' \
-    'Container Linux Stable'
-```
-
-[coreos-ostack]: https://coreos.com/os/docs/latest/booting-on-openstack.html
-[ostack-cli]: https://pypi.python.org/pypi/python-openstackclient
-
 ### Runtime
 
 [Python][python] interpreter (version 3.2 or above) with the [`setuptools`][py-setuptools] package.
@@ -102,8 +80,8 @@ performed on this software or the elements of infrastructure it helps to generat
 [ignition]: https://coreos.com/ignition/
 [flannel]: https://coreos.com/flannel/
 [python]: https://www.python.org/downloads/
-[py-setuptools]: https://pypi.python.org/pypi/setuptools
-[py-cryptography]: https://pypi.python.org/pypi/cryptography
+[py-setuptools]: https://pypi.org/project/setuptools/
+[py-cryptography]: https://pypi.org/project/cryptography/
 [cryp-req]: https://cryptography.io/en/latest/installation/#building-cryptography-on-linux
 [dash]: docs/images/project_dashboard.png
 [ovh]: https://www.ovh.com/
