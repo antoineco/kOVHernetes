@@ -74,12 +74,11 @@ The following critical services should be in the process of starting, or already
 
 * `kubelet.service`: starts all other Kubernetes components as [Pods][pod].
 * `etcd-member.service`: provides configuration persistence to the Kubernetes API server.
-* `flanneld.service`: creates the overlay network used for inter-container communications.
 
-Ensure all 3 services started without errors with:
+Ensure both these services started without errors with:
 
 ```
-core@host-192.168.0.10 ~ $ systemctl status kubelet etcd-member flanneld
+core@host-192.168.0.10 ~ $ systemctl status kubelet etcd-member
 
 ● kubelet.service - Kubernetes kubelet (System Application Container)
    Loaded: loaded (/etc/systemd/system/kubelet.service; enabled; vendor preset: enabled)
@@ -89,19 +88,12 @@ core@host-192.168.0.10 ~ $ systemctl status kubelet etcd-member flanneld
 ● etcd-member.service - etcd (System Application Container)
    Loaded: loaded (/usr/lib/systemd/system/etcd-member.service; enabled; vendor preset: enabled)
   Drop-In: /etc/systemd/system/etcd-member.service.d
-           └─10-cluster.conf
+           └─10-daemon.conf
    Active: active (running) since Wed 2017-05-31 11:48:25 UTC; 7min ago
-   [...]
-
-● flanneld.service - flannel - Network fabric for containers (System Application Container)
-   Loaded: loaded (/usr/lib/systemd/system/flanneld.service; enabled; vendor preset: enabled)
-  Drop-In: /etc/systemd/system/flanneld.service.d
-           └─10-network-config.conf
-   Active: active (running) since Wed 2017-05-31 11:48:46 UTC; 6min ago
    [...]
 ```
 
-Additionally, you should be able to list the [rkt][rkt] containers running these 3 services (yup, everything is
+Additionally, you should be able to list the [rkt][rkt] containers running these 2 services (yup, everything is
 containerized!).
 
 ```
@@ -109,8 +101,6 @@ core@host-192.168.0.10 ~ $ rkt list
 
 UUID      APP        IMAGE NAME                                STATE
 079c62f6  hyperkube  quay.io/coreos/hyperkube:v1.7.0_coreos.0  running
-154b06de  flannel    quay.io/coreos/flannel:v0.7.1             running
-cd973167  flannel    quay.io/coreos/flannel:v0.7.1             exited
 d704531f  etcd       quay.io/coreos/etcd:v3.1.6                running
 ```
 
@@ -179,6 +169,9 @@ kube-addon-manager-host-192.168.0.10        1/1       Running   0          6m
 kube-apiserver-host-192.168.0.10            1/1       Running   0          7m
 kube-controller-manager-host-192.168.0.10   1/1       Running   0          6m
 kube-dns-806549836-bc2l4                    3/3       Running   0          7m
+kube-flannel-ds-5v849                       2/2       Running   0          7m
+kube-flannel-ds-w04fh                       2/2       Running   0          7m
+kube-flannel-ds-9jg49                       2/2       Running   0          7m
 kube-proxy-host-192.168.0.10                1/1       Running   0          6m
 kube-proxy-host-192.168.0.11                1/1       Running   0          6m
 kube-proxy-host-192.168.0.12                1/1       Running   0          7m
@@ -188,6 +181,12 @@ kubernetes-dashboard-2917854236-wkpv6       1/1       Running   0          7m
 
 Did you notice the name of these pods? They correspond exactly to the output of the `docker ps` command executed in the
 previous section.
+
+A few other applications were started by the `kube-addon-manager` pod:
+
+* [Kube-DNS][addon-dns] add-on
+* [Dashboard][addon-dash] add-on
+* [flannel][flannel] overlay network
 
 Now go ahead and create a replicated application. [`nginx`][nginx-hub] is often used as a quickstart example. Ours will
 have 5 replicas.
@@ -317,5 +316,8 @@ Destroying private network 'kovh:cursedfleet:'	[OK]
 [service]: https://kubernetes.io/docs/concepts/services-networking/service/
 [deployment]: https://kubernetes.io/docs/concepts/workloads/controllers/deployment/
 [rkt]: https://coreos.com/rkt
+[addon-dns]: https://github.com/kubernetes/kubernetes/blob/master/cluster/addons/dns/README.md
+[addon-dash]: https://github.com/kubernetes/dashboard/blob/master/README.md
+[flannel]: https://github.com/coreos/flannel/blob/master/README.md
 [nginx-hub]: https://hub.docker.com/_/nginx/
 [nginx-highport]: images/nginx_highport.png

@@ -41,7 +41,7 @@ acquires its network configuration from the DHCP server (backed by OpenStack Neu
 |---------------|-----------------------------------------------------------------------------|
 | 172.17.0.0/16 | Overlay network from which each Kubernetes Pod gets assigned an IP address. |
 
-This network is managed by [flannel][flannel], configured with the [VXLAN][vxlan] backend. A subnet of length /24 gets
+This network is managed by [Flannel][flannel], configured with the [VXLAN][vxlan] backend. A subnet of length /24 gets
 allocated to the `flannel.1` vxlan interface on every node from this network.
 
 ### Service network
@@ -60,30 +60,32 @@ Security within a cluster is enforced at multiple levels.
 
 All inter-components communications within the cluster are made [over a TLS connection][k8s-tls], comprising:
 
-* Kubernetes components <-> Kubernetes API server
-* Kubernetes API server <-> etcd
-* flannel <-> etcd
+* Kubernetes components -> Kubernetes API server
+* System pods (Flannel, add-ons) -> Kubernetes API server
+* Kubernetes API server -> etcd
 
 The only exception is the Kubernetes API server, which serves an unsecured and unauthenticated access reachable only
 from localhost on the TCP port 8080 (master instance).
 
 ### Authentication
 
-kOVHernetes generates a Certificate Authority and a set of X.509 certificates during the bootstrap process. These
-certificates are used to authenticate client components against server components. The matrix below describes these
-interactions:
+kOVHernetes generates a Certificate Authority and a set of [X.509 certificates][k8s-x509] during the bootstrap process.
+These certificates are used to authenticate client components against server components. The matrix below describes
+these interactions:
 
 :key: &nbsp; X.509 auth  
 
-| *Client* / *Server* | kube-api | kubelet | kube-&ast; | etcd  | flannel |
-|:-------------------:|:--------:|:-------:|:----------:|:-----:|:-------:|
-| **kube-api**        | -        | :key:   |            | :key: |         |
-| **kubelet**         | :key:    | -       |            |       |         |
-| **kube-&ast;**      | :key:    |         | -          |       |         |
-| **etcd**            |          |         |            | -     |         |
-| **flannel**         |          |         |            | :key: | -       |
+| *Client* / *Server* | kube-api | kubelet | kube-&ast; | etcd  |
+|:-------------------:|:--------:|:-------:|:----------:|:-----:|
+| **kube-api**        | -        | :key:   |            | :key: |
+| **kubelet**         | :key:    | -       |            |       |
+| **kube-&ast;**      | :key:    |         | -          |       |
+| **etcd**            |          |         |            | -     |
 
 \* *`kube-*` includes `kube-scheduler`, `kube-controller-manager` and `kube-proxy`*
+
+System applications running inside the cluster, such as Flannel and Kubernetes add-ons, get authenticated using
+[ServiceAccount][sa] tokens signed by the controller-manager.
 
 ### Authorization
 
@@ -111,5 +113,6 @@ mechanism][etcd-v3auth] is still in a design phase upstream.
 [kube-proxy]: https://kubernetes.io/docs/concepts/services-networking/service/#proxy-mode-iptables
 [k8s-tls]: https://kubernetes.io/docs/admin/accessing-the-api/#transport-security
 [k8s-x509]: https://kubernetes.io/docs/admin/authentication/#x509-client-certs
+[sa]: https://kubernetes.io/docs/admin/service-accounts-admin/
 [etcd-auth]: https://coreos.com/etcd/docs/latest/op-guide/security.html#example-2-client-to-server-authentication-with-https-client-certificates
 [etcd-v3auth]: https://github.com/coreos/etcd/blob/master/Documentation/learning/auth_design.md

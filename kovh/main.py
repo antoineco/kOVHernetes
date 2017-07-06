@@ -266,7 +266,6 @@ def create_command(client, args):
     )
     for c in ('kubelet', 'proxy', 'controller-manager', 'scheduler'):
         master.userdata.gen_kubeconfig(c)
-    master.userdata.gen_flanneld_config(netconf=True)
 
     nodes = []
     for i in range(1, size):
@@ -282,7 +281,6 @@ def create_command(client, args):
         )
         for c in ('kubelet', 'proxy'):
             node.userdata.gen_kubeconfig(c, 'host-' + master.ip.replace('.', '-'))
-        node.userdata.gen_flanneld_config('host-' + master.ip.replace('.', '-'))
         nodes.append(node)
 
     print('\t[OK]')

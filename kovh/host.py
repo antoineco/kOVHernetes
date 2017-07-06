@@ -39,8 +39,6 @@ class Host:
             kubelet_client_crt_pem = dump_certificate(FILETYPE_PEM, kubelet_client_crt)
             proxy_client_crt = ca.create_client_cert(key, 'Kubernetes', 'system:kube-proxy')
             proxy_client_crt_pem = dump_certificate(FILETYPE_PEM, proxy_client_crt)
-            etcd_client_crt = ca.create_client_cert(key, 'etcd', 'root')
-            etcd_client_crt_pem = dump_certificate(FILETYPE_PEM, etcd_client_crt)
 
             # TLS server certificates
             kubelet_server_crt = ca.create_server_cert(key, 'Kubernetes', 'host-' + ip.replace('.', '-'))
@@ -86,16 +84,7 @@ class Host:
                     'contents': {
                         'source': 'data:,' + quote(proxy_client_crt_pem)
                     }
-                },
-                {
-                    'filesystem': 'root',
-                    'path': '/etc/kubernetes/tls/client/etcd.crt',
-                    'mode': 420, # 0644
-                    'contents': {
-                        'source': 'data:,' + quote(etcd_client_crt_pem)
-                    }
                 }
-
             ])
 
         if 'master' in self.roles:
@@ -136,7 +125,8 @@ class Host:
             scheduler_crt_pem = dump_certificate(FILETYPE_PEM, scheduler_crt)
             apiserver_client_crt = ca.create_client_cert(key, 'system:masters', 'apiserver:host-' + ip.replace('.', '-'))
             apiserver_client_crt_pem = dump_certificate(FILETYPE_PEM, apiserver_client_crt)
-
+            etcd_client_crt = ca.create_client_cert(key, 'etcd', 'root')
+            etcd_client_crt_pem = dump_certificate(FILETYPE_PEM, etcd_client_crt)
 
             self.userdata.add_files ([
                 {
@@ -185,6 +175,14 @@ class Host:
                     'mode': 420, # 0644
                     'contents': {
                         'source': 'data:,' + quote(apiserver_client_crt_pem)
+                    }
+                },
+                {
+                    'filesystem': 'root',
+                    'path': '/etc/kubernetes/tls/client/etcd.crt',
+                    'mode': 420, # 0644
+                    'contents': {
+                        'source': 'data:,' + quote(etcd_client_crt_pem)
                     }
                 }
             ])

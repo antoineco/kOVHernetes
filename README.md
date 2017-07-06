@@ -67,10 +67,8 @@ performed on this software or the elements of infrastructure it helps to generat
 
 ## Roadmap
 
-* [ ] Secure apiserver -> kubelet communications
 * [ ] `list` command to display clusters
 * [ ] Master HA
-* [ ] CNI networking
 
 
 [logo]: docs/images/logo.png

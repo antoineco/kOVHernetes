@@ -14,6 +14,7 @@
         "command": [
           "kube-proxy",
           "--cluster-cidr=172.17.0.0/16",
+          "--healthz-bind-address=127.0.0.1",
           "--kubeconfig=/etc/kubernetes/kubeconfig",
           "--profiling=false"
         ],
@@ -22,7 +23,7 @@
         },
         "ports": [
           {
-            "containerPort": 10249,
+            "containerPort": 10256,
             "name": "http"
           }
         ],

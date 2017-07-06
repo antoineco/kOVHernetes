@@ -1,4 +1,13 @@
-All add-on definitions in this directory were assembled from the manifests distributed as part of the
-[hyperkube image][hyperkube] (`/etc/kubernetes/addons` directory).
+# Kubernetes addons
 
-[hyperkube]: https://quay.io/repository/coreos/hyperkube
+## Kube-DNS, Dashboard
+
+These add-on definitions were assembled from the resources found in the [Kubernetes repository][k8s].
+
+[k8s]: https://github.com/kubernetes/kubernetes/tree/master/cluster/addons
+
+## Flannel
+
+These add-on definitions were assembled from the example manifests found in the [flannel documentation][flannel].
+
+[flannel]: https://github.com/coreos/flannel/tree/master/Documentation

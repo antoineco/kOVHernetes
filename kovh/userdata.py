@@ -20,8 +20,7 @@ files = {
     'coremetassh'              : res_plain('data/systemd/coreos-metadata-sshkeys@.service.d/10-provider.conf'),
     'kubelet'                  : res_plain('data/systemd/kubelet.service'),
     'etcd'                     : res_plain('data/systemd/etcd-member.service.d/10-daemon.conf'),
-    'flanneld'                 : res_plain('data/systemd/flanneld.service.d/10-daemon.conf'),
-    'flanneld_netconf'         : res_plain('data/systemd/flanneld.service.d/10-network-config.conf'),
+    'docker'                   : res_plain('data/systemd/docker.service.d/10-daemon.conf'),
     # k8s components manifests
     'apiserver'                : res_plain('data/k8s/manifests/kube-apiserver.json'),
     'proxy'                    : res_plain('data/k8s/manifests/kube-proxy.json'),
@@ -31,6 +30,7 @@ files = {
     # k8s addons manifests
     'dashboard'                : res_gzip('data/k8s/addons/dashboard.yml'),
     'kubedns'                  : res_gzip('data/k8s/addons/kubedns.yml'),
+    'flannel'                  : res_gzip('data/k8s/addons/flannel.yml'),
     # k8s kubeconfig
     'kubeconfig'               : res_plain('data/k8s/kubeconfig.json')
 }
@@ -148,26 +148,6 @@ class UserData:
             }
         ])
 
-    def gen_flanneld_config(self, server='localhost', netconf=False):
-        """Generate flanneld config"""
-
-        fld_unit = {
-            'name': 'flanneld.service',
-            'enable': True,
-            'dropins': [{
-                'name': '10-daemon.conf',
-                'contents': files['flanneld'].decode().replace('__ETCD_URL__', 'https://' + server + ':2379')
-            }]
-        }
-
-        if netconf:
-            fld_unit['dropins'].append({
-                'name': '10-network-config.conf',
-                'contents': files['flanneld_netconf'].decode()
-            })
-
-        self.add_sunits([fld_unit])
-
     def gen_etc_hosts(self, client, net):
         """Generate /etc/hosts file containing all subnet hosts
 
@@ -199,6 +179,30 @@ class UserData:
         """Generate data deployed to all Kubernetes instances"""
 
         self.gen_kubelet_unit('v{}_{}'.format(self.k8s_ver, self.img_suffix))
+
+        # configure Docker daemon
+        self.add_sunits([
+            {
+                'name': 'docker.service',
+                'dropins': [{
+                    'name': '10-daemon.conf',
+                    'contents': files['docker'].decode()
+                }]
+            }
+        ])
+
+        # download CNI plugin binaries
+        self.add_files([
+            {
+                'filesystem': 'root',
+                'path': '/opt/cni/bin/cni.tgz',
+                'mode': 420, # 0644
+                'contents': {
+                    'source': ('https://github.com/containernetworking/cni/releases/download/'
+                               'v0.5.2/cni-amd64-v0.5.2.tgz')
+                }
+            }
+        ])
 
     def gen_kubemaster_data(self):
         """Generate data deployed to all Kubernetes masters"""
@@ -242,6 +246,15 @@ class UserData:
                 'mode': 416, # 0640
                 'contents': {
                     'source': 'data:,' + quote(files['dashboard']),
+                    'compression': 'gzip'
+                }
+            },
+            {
+                'filesystem': 'root',
+                'path': '/etc/kubernetes/addons/flannel.yml',
+                'mode': 416, # 0640
+                'contents': {
+                    'source': 'data:,' + quote(files['flannel']),
                     'compression': 'gzip'
                 }
             },
