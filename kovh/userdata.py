@@ -38,7 +38,7 @@ files = {
 
 class UserData:
 
-    def __init__(self, k8s_ver='1.7.0', img_suffix='coreos.0'):
+    def __init__(self, k8s_ver='1.8.0', img_suffix='coreos.0'):
         self.k8s_ver = k8s_ver
         self.img_suffix = img_suffix
 
@@ -198,8 +198,8 @@ class UserData:
                 'path': '/opt/cni/bin/cni.tgz',
                 'mode': 420, # 0644
                 'contents': {
-                    'source': ('https://github.com/containernetworking/cni/releases/download/'
-                               'v0.5.2/cni-amd64-v0.5.2.tgz')
+                    'source': ('https://github.com/containernetworking/plugins/releases/download/'
+                               'v0.6.0/cni-plugins-amd64-v0.6.0.tgz')
                 }
             }
         ])

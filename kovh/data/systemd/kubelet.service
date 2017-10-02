@@ -34,7 +34,6 @@ ExecStart=/usr/lib/coreos/kubelet-wrapper \
   --network-plugin=cni \
   --pod-manifest-path=/etc/kubernetes/manifests \
   --read-only-port=0 \
-  --require-kubeconfig \
   --tls-cert-file=/etc/kubernetes/tls/server/kubeletbundle.crt \
   --tls-private-key-file=/etc/kubernetes/tls/host.key
 ExecStop=-/usr/bin/rkt stop --uuid-file=/var/lib/coreos/kubelet-wrapper.uuid
