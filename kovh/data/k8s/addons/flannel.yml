@@ -62,11 +62,21 @@ data:
   cni-conf.json: |
     {
       "name": "cbr0",
-      "type": "flannel",
-      "delegate": {
-        "isDefaultGateway": true,
-        "hairpinMode": true
-      }
+      "plugins": [
+        {
+          "type": "flannel",
+          "delegate": {
+            "hairpinMode": true,
+            "isDefaultGateway": true
+          }
+        },
+        {
+          "type": "portmap",
+          "capabilities": {
+            "portMappings": true
+          }
+        }
+      ]
     }
   net-conf.json: |
     {
@@ -106,13 +116,20 @@ spec:
       serviceAccountName: flannel
       initContainers:
       - name: install-cni
-        image: quay.io/coreos/flannel:v0.9.0-amd64
+        image: quay.io/coreos/flannel:v0.9.1-amd64
         command:
         - cp
         args:
         - -f
         - /etc/kube-flannel/cni-conf.json
-        - /etc/cni/net.d/10-flannel.conf
+        - /etc/cni/net.d/10-flannel.conflist
+        resources:
+          requests:
+            cpu: 10m
+            memory: 20Mi
+          limits:
+            cpu: 20m
+            memory: 30Mi
         volumeMounts:
         - name: cni
           mountPath: /etc/cni/net.d
@@ -120,8 +137,12 @@ spec:
           mountPath: /etc/kube-flannel/
       containers:
       - name: kube-flannel
-        image: quay.io/coreos/flannel:v0.9.0-amd64
-        command: [ "/opt/bin/flanneld", "--ip-masq", "--kube-subnet-mgr" ]
+        image: quay.io/coreos/flannel:v0.9.1-amd64
+        command:
+        - /opt/bin/flanneld
+        args:
+        - --ip-masq
+        - --kube-subnet-mgr
         securityContext:
           privileged: true
         env:
