@@ -36,7 +36,6 @@ Creating local kubeconfig	[OK]
 2. The subnet 192.168.0.0/27 was created within this private network, in the configured region
 3. A Certificate Authority was generated locally and in memory, it will enable PKI authentication within the cluster
 4. The creation of 3 new instances was initiated
-5. A configuration file for the `kubectl` client tool was written locally
 
 You can see the instances being created using the `project instances` subcommand.
 
