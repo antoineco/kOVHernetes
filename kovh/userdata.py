@@ -44,7 +44,7 @@ class UserData:
 
         # boilerplate ignition config
         self.data = {
-            'ignition': { 'version': '2.0.0' },
+            'ignition': { 'version': '2.1.0' },
             'storage': {},
             'systemd': {}
         }
@@ -108,11 +108,10 @@ class UserData:
         self.add_files([
             {
                 'filesystem': 'root',
-                'path': '/etc/kubernetes/kubeconfig-' + component,
+                'path': '/etc/kubernetes/kubeconfig-' + component + '.gz',
                 'mode': 416, # 0640
                 'contents': {
-                    'source': 'data:,' + quote(kubeconfig),
-                    'compression': 'gzip'
+                    'source': 'data:,' + quote(kubeconfig)
                 }
             }
         ])
@@ -128,11 +127,10 @@ class UserData:
         self.add_files([
             {
                 'filesystem': 'root',
-                'path': '/etc/kubernetes/manifests/kube-{}.json'.format(component),
+                'path': '/etc/kubernetes/manifests/kube-{}.json'.format(component) + '.gz',
                 'mode': 416, # 0640
                 'contents': {
-                    'source': 'data:,' + quote(manifest),
-                    'compression': 'gzip'
+                    'source': 'data:,' + quote(manifest)
                 }
             }
         ])
@@ -158,10 +156,8 @@ class UserData:
 
         subnet = client.get('/cloud/project/{}/network/private/{}/subnet'.format(client._project, net))[0]
         hosts = IPv4Network(subnet['cidr']).hosts()
-        hosts_content = compress(
-            ('127.0.0.1\tlocalhost\n' + '::1\t\tlocalhost\n' +
+        hosts_content = ('127.0.0.1\tlocalhost\n' + '::1\t\tlocalhost\n' +
              '\n'.join(['{}\t{}'.format(ip, 'host-'+str(ip).replace('.', '-')) for ip in hosts]) + '\n').encode()
-        )
 
         self.add_files([
             {
@@ -169,8 +165,7 @@ class UserData:
                 'path': '/etc/hosts',
                 'mode': 420, # 0644
                 'contents': {
-                    'source': 'data:,' + quote(hosts_content),
-                    'compression': 'gzip'
+                    'source': 'data:,' + quote(hosts_content)
                 }
             }
         ])
@@ -224,38 +219,34 @@ class UserData:
         self.add_files([
             {
                 'filesystem': 'root',
-                'path': '/etc/kubernetes/manifests/kube-addon-manager.yml',
+                'path': '/etc/kubernetes/manifests/kube-addon-manager.yml' + '.gz',
                 'mode': 416, # 0640
                 'contents': {
-                    'source': 'data:,' + quote(files['addon-manager']),
-                    'compression': 'gzip'
+                    'source': 'data:,' + quote(files['addon-manager'])
                 }
             },
             {
                 'filesystem': 'root',
-                'path': '/etc/kubernetes/addons/kubedns.yml',
+                'path': '/etc/kubernetes/addons/kubedns.yml' + '.gz',
                 'mode': 416, # 0640
                 'contents': {
-                    'source': 'data:,' + quote(files['kubedns']),
-                    'compression': 'gzip'
+                    'source': 'data:,' + quote(files['kubedns'])
                 }
             },
             {
                 'filesystem': 'root',
-                'path': '/etc/kubernetes/addons/dashboard.yml',
+                'path': '/etc/kubernetes/addons/dashboard.yml' + '.gz',
                 'mode': 416, # 0640
                 'contents': {
-                    'source': 'data:,' + quote(files['dashboard']),
-                    'compression': 'gzip'
+                    'source': 'data:,' + quote(files['dashboard'])
                 }
             },
             {
                 'filesystem': 'root',
-                'path': '/etc/kubernetes/addons/flannel.yml',
+                'path': '/etc/kubernetes/addons/flannel.yml' + '.gz',
                 'mode': 416, # 0640
                 'contents': {
-                    'source': 'data:,' + quote(files['flannel']),
-                    'compression': 'gzip'
+                    'source': 'data:,' + quote(files['flannel'])
                 }
             },
             {
