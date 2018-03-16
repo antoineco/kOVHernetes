@@ -1,6 +1,6 @@
 ---
 kind: ClusterRole
-apiVersion: rbac.authorization.k8s.io/v1beta1
+apiVersion: rbac.authorization.k8s.io/v1
 metadata:
   name: flannel
   labels:
@@ -27,7 +27,7 @@ rules:
       - patch
 ---
 kind: ClusterRoleBinding
-apiVersion: rbac.authorization.k8s.io/v1beta1
+apiVersion: rbac.authorization.k8s.io/v1
 metadata:
   name: flannel
   labels:
@@ -86,7 +86,7 @@ data:
       }
     }
 ---
-apiVersion: extensions/v1beta1
+apiVersion: apps/v1
 kind: DaemonSet
 metadata:
   name: kube-flannel-ds
@@ -96,6 +96,10 @@ metadata:
     app: flannel
     addonmanager.kubernetes.io/mode: Reconcile
 spec:
+  selector:
+    matchLabels:
+      tier: node
+      app: flannel
   template:
     metadata:
       labels:
@@ -104,19 +108,18 @@ spec:
       annotations:
         scheduler.alpha.kubernetes.io/critical-pod: ''
     spec:
+      priorityClassName: system-cluster-critical
       hostNetwork: true
       nodeSelector:
         beta.kubernetes.io/arch: amd64
       tolerations:
-      - key: CriticalAddonsOnly
-        operator: Exists
       - key: node-role.kubernetes.io/master
         operator: Exists
         effect: NoSchedule
       serviceAccountName: flannel
       initContainers:
       - name: install-cni
-        image: quay.io/coreos/flannel:v0.9.1-amd64
+        image: quay.io/coreos/flannel:v0.10.0-amd64
         command:
         - cp
         args:
@@ -137,7 +140,7 @@ spec:
           mountPath: /etc/kube-flannel/
       containers:
       - name: kube-flannel
-        image: quay.io/coreos/flannel:v0.9.1-amd64
+        image: quay.io/coreos/flannel:v0.10.0-amd64
         command:
         - /opt/bin/flanneld
         args:

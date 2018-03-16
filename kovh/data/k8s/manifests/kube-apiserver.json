@@ -13,7 +13,7 @@
         "image": "__IMAGE__",
         "command": [
           "kube-apiserver",
-          "--admission-control=NamespaceLifecycle,LimitRanger,ServiceAccount,PersistentVolumeLabel,DefaultStorageClass,ResourceQuota,DefaultTolerationSeconds",
+          "--admission-control=NamespaceLifecycle,LimitRanger,ServiceAccount,PersistentVolumeLabel,DefaultStorageClass,DefaultTolerationSeconds,MutatingAdmissionWebhook,ValidatingAdmissionWebhook,ResourceQuota,Priority",
           "--allow-privileged",
           "--anonymous-auth=false",
           "--apiserver-count=1",

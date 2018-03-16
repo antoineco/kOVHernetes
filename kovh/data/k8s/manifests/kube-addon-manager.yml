@@ -4,21 +4,25 @@ kind: Pod
 metadata:
   name: kube-addon-manager
   namespace: kube-system
-  version: v1
+  annotations:
+    scheduler.alpha.kubernetes.io/critical-pod: ''
+  labels:
+    component: kube-addon-manager
 spec:
+  priorityClassName: system-cluster-critical
   hostNetwork: true
   containers:
   - name: kube-addon-manager
-    image: gcr.io/google-containers/kube-addon-manager-amd64:v6.5
+    image: k8s.gcr.io/kube-addon-manager:v8.6
     resources:
       requests:
         cpu: 5m
         memory: 50Mi
     volumeMounts:
-    - mountPath: /etc/kubernetes/addons
+    - mountPath: /etc/kubernetes/
       name: addons
       readOnly: true
   volumes:
   - hostPath:
-      path: /etc/kubernetes/addons
+      path: /etc/kubernetes/
     name: addons
