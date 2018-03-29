@@ -186,19 +186,6 @@ class UserData:
             }
         ])
 
-        # download CNI plugin binaries
-        self.add_files([
-            {
-                'filesystem': 'root',
-                'path': '/opt/cni/bin/cni.tgz',
-                'mode': 420, # 0644
-                'contents': {
-                    'source': ('https://github.com/containernetworking/plugins/releases/download/'
-                               'v0.6.0/cni-plugins-amd64-v0.6.0.tgz')
-                }
-            }
-        ])
-
     def gen_kubemaster_data(self):
         """Generate data deployed to all Kubernetes masters"""
 

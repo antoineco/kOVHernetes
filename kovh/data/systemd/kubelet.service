@@ -12,12 +12,11 @@ TimeoutStartSec=0
 
 EnvironmentFile=/run/metadata/coreos
 Environment="KUBELET_IMAGE_TAG=__IMAGE_TAG__"
-Environment="RKT_RUN_ARGS=--uuid-file-save=/var/lib/coreos/kubelet-wrapper.uuid --hosts-entry=host --dns=host --volume cniconf,kind=host,source=/etc/cni/net.d,readOnly=true --mount volume=cniconf,target=/etc/cni/net.d --volume cnibin,kind=host,source=/opt/cni/bin,readOnly=true --mount volume=cnibin,target=/opt/cni/bin"
+Environment="RKT_RUN_ARGS=--uuid-file-save=/var/lib/coreos/kubelet-wrapper.uuid --hosts-entry=host --dns=host --volume cniconf,kind=host,source=/etc/cni/net.d,readOnly=true --mount volume=cniconf,target=/etc/cni/net.d"
 
 ExecStartPre=/usr/bin/gunzip -r /etc/kubernetes
 ExecStartPre=/usr/bin/mkdir --parents /var/lib/coreos
 ExecStartPre=/usr/bin/mkdir --parents /etc/cni/net.d
-ExecStartPre=-/usr/bin/tar -xzf /opt/cni/bin/cni.tgz -C /opt/cni/bin
 ExecStartPre=-/usr/bin/rkt rm --uuid-file=/var/lib/coreos/kubelet-wrapper.uuid
 ExecStartPre=/usr/bin/bash -c \
   "cat /etc/kubernetes/tls/server/kubelet.crt /etc/kubernetes/tls/ca.pem > /etc/kubernetes/tls/server/kubeletbundle.crt"
