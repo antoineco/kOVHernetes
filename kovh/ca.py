@@ -31,7 +31,7 @@ class CA:
 
         cert.add_extensions((crypto.X509Extension(b'subjectKeyIdentifier', False, b'hash', cert),))
         cacert_ext = []
-        cacert_ext.append(crypto.X509Extension(b'authorityKeyIdentifier', True, b'keyid:always,issuer', issuer=cert))
+        cacert_ext.append(crypto.X509Extension(b'authorityKeyIdentifier', True, b'keyid:always,issuer', issuer=self.cert))
         cacert_ext.append(crypto.X509Extension(b'basicConstraints', True, b'CA:TRUE'))
         cacert_ext.append(crypto.X509Extension(b'keyUsage', True, b'digitalSignature, cRLSign, keyCertSign'))
         cert.add_extensions(cacert_ext)
@@ -69,7 +69,7 @@ class CA:
 
         cert_ext = []
         cert_ext.append(crypto.X509Extension(b'subjectKeyIdentifier', False, b'hash', cert))
-        cert_ext.append(crypto.X509Extension(b'authorityKeyIdentifier', False, b'keyid,issuer', issuer=cert))
+        cert_ext.append(crypto.X509Extension(b'authorityKeyIdentifier', False, b'keyid,issuer', issuer=self.cert))
         cert_ext.append(crypto.X509Extension(b'basicConstraints', False, b'CA:FALSE'))
         cert_ext.append(crypto.X509Extension(b'keyUsage', True, b'nonRepudiation, digitalSignature, keyEncipherment'))
         cert_ext.append(crypto.X509Extension(b'extendedKeyUsage', True, b'clientAuth'))
@@ -100,7 +100,7 @@ class CA:
 
         cert_ext = []
         cert_ext.append(crypto.X509Extension(b'subjectKeyIdentifier', False, b'hash', cert))
-        cert_ext.append(crypto.X509Extension(b'authorityKeyIdentifier', False, b'keyid,issuer:always', issuer=cert))
+        cert_ext.append(crypto.X509Extension(b'authorityKeyIdentifier', False, b'keyid,issuer:always', issuer=self.cert))
         cert_ext.append(crypto.X509Extension(b'basicConstraints', False, b'CA:FALSE'))
         cert_ext.append(crypto.X509Extension(b'keyUsage', True, b'digitalSignature, keyEncipherment'))
         cert_ext.append(crypto.X509Extension(b'extendedKeyUsage', True, b'serverAuth'))
@@ -138,7 +138,7 @@ class CA:
 
         cert_ext = []
         cert_ext.append(crypto.X509Extension(b'subjectKeyIdentifier', False, b'hash', cert))
-        cert_ext.append(crypto.X509Extension(b'authorityKeyIdentifier', False, b'keyid,issuer', issuer=cert))
+        cert_ext.append(crypto.X509Extension(b'authorityKeyIdentifier', False, b'keyid,issuer', issuer=self.cert))
         cert_ext.append(crypto.X509Extension(b'basicConstraints', False, b'CA:FALSE'))
         cert_ext.append(crypto.X509Extension(b'keyUsage', True, b'nonRepudiation, digitalSignature, keyEncipherment'))
         cert_ext.append(crypto.X509Extension(b'extendedKeyUsage', True, b'clientAuth'))
@@ -174,7 +174,7 @@ class CA:
 
         cert_ext = []
         cert_ext.append(crypto.X509Extension(b'subjectKeyIdentifier', False, b'hash', cert))
-        cert_ext.append(crypto.X509Extension(b'authorityKeyIdentifier', False, b'keyid,issuer:always', issuer=cert))
+        cert_ext.append(crypto.X509Extension(b'authorityKeyIdentifier', False, b'keyid,issuer:always', issuer=self.cert))
         cert_ext.append(crypto.X509Extension(b'basicConstraints', False, b'CA:FALSE'))
         cert_ext.append(crypto.X509Extension(b'keyUsage', True, b'digitalSignature, keyEncipherment'))
         cert_ext.append(crypto.X509Extension(b'extendedKeyUsage', True, b'serverAuth'))
