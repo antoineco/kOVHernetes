@@ -15,6 +15,7 @@
           "kube-proxy",
           "--cluster-cidr=172.17.0.0/16",
           "--healthz-bind-address=127.0.0.1",
+          "--proxy-mode=iptables",
           "--kubeconfig=/etc/kubernetes/kubeconfig",
           "--profiling=false"
         ],
@@ -56,6 +57,11 @@
             "mountPath": "/usr/share/ca-certificates",
             "name": "ca-certs",
             "readOnly": true
+          },
+          {
+            "mountPath": "/lib/modules",
+            "name": "kernel-modules",
+            "readOnly": true
           }
         ]
       }
@@ -84,6 +90,12 @@
           "path": "/usr/share/ca-certificates"
         },
         "name": "ca-certs"
+      },
+      {
+        "hostPath": {
+          "path": "/lib/modules"
+        },
+        "name": "kernel-modules"
       }
     ]
   }

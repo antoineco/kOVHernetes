@@ -7,18 +7,36 @@
   },
   "spec": {
     "hostNetwork": true,
+    "initContainers": [
+      {
+        "name": "concat-tls",
+        "image": "busybox",
+        "command": [
+          "sh",
+          "-c",
+          "cat /etc/kubernetes/tls/server/apiserver.crt /etc/kubernetes/tls/ca.pem > /etc/kubernetes/tls/server/apiserverbundle.crt"
+        ],
+        "volumeMounts": [
+          {
+            "mountPath": "/etc/kubernetes/tls",
+            "name": "k8s-tls",
+            "readOnly": false
+          }
+        ]
+      }
+    ],
     "containers": [
       {
         "name": "kube-apiserver",
         "image": "__IMAGE__",
         "command": [
           "kube-apiserver",
-          "--admission-control=NamespaceLifecycle,LimitRanger,ServiceAccount,PersistentVolumeLabel,DefaultStorageClass,DefaultTolerationSeconds,MutatingAdmissionWebhook,ValidatingAdmissionWebhook,ResourceQuota,Priority",
           "--allow-privileged",
           "--anonymous-auth=false",
           "--apiserver-count=1",
           "--authorization-mode=AlwaysAllow",
           "--client-ca-file=/etc/kubernetes/tls/ca.pem",
+          "--enable-admission-plugins=NamespaceLifecycle,LimitRanger,ServiceAccount,DefaultStorageClass,DefaultTolerationSeconds,MutatingAdmissionWebhook,ValidatingAdmissionWebhook,ResourceQuota",
           "--etcd-cafile=/etc/kubernetes/tls/ca.pem",
           "--etcd-certfile=/etc/kubernetes/tls/client/etcd.crt",
           "--etcd-keyfile=/etc/kubernetes/tls/host.key",
@@ -27,11 +45,9 @@
           "--kubelet-client-certificate=/etc/kubernetes/tls/client/apiserver.crt",
           "--kubelet-client-key=/etc/kubernetes/tls/host.key",
           "--profiling=false",
-          "--repair-malformed-updates=false",
           "--service-account-lookup",
           "--service-cluster-ip-range=10.0.0.0/16",
-          "--tls-ca-file=/etc/kubernetes/tls/ca.pem",
-          "--tls-cert-file=/etc/kubernetes/tls/server/apiserver.crt",
+          "--tls-cert-file=/etc/kubernetes/tls/server/apiserverbundle.crt",
           "--tls-private-key-file=/etc/kubernetes/tls/host.key"
         ],
         "ports": [

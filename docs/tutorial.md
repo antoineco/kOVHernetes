@@ -140,10 +140,10 @@ registered with the API server.
 ```
 core@host-192.168.0.10 ~ $ kubectl get nodes
 
-NAME                STATUS   AGE   VERSION
-host-192.168.0.10   Ready    8m    v1.7.0+coreos.0
-host-192.168.0.11   Ready    8m    v1.7.0+coreos.0
-host-192.168.0.12   Ready    8m    v1.7.0+coreos.0
+NAME                STATUS   ROLES         AGE   VERSION
+host-192.168.0.10   Ready    master,node   8m    v1.11.3
+host-192.168.0.11   Ready    node          8m    v1.11.3
+host-192.168.0.12   Ready    node          8m    v1.11.3
 ```
 
 It has some default [Namespaces][namespace] pre-created.
@@ -175,7 +175,6 @@ kube-proxy-host-192.168.0.10                1/1       Running   0          6m
 kube-proxy-host-192.168.0.11                1/1       Running   0          6m
 kube-proxy-host-192.168.0.12                1/1       Running   0          7m
 kube-scheduler-host-192.168.0.10            1/1       Running   0          6m
-kubernetes-dashboard-2917854236-wkpv6       1/1       Running   0          7m
 ```
 
 Did you notice the name of these pods? They correspond exactly to the output of the `docker ps` command executed in the
@@ -184,7 +183,6 @@ previous section.
 A few other applications were started by the `kube-addon-manager` pod:
 
 * [Kube-DNS][addon-dns] add-on
-* [Dashboard][addon-dash] add-on
 * [flannel][flannel] overlay network
 
 Now go ahead and create a replicated application. [`nginx`][nginx-hub] is often used as a quickstart example. Ours will
@@ -316,7 +314,6 @@ Destroying private network 'kovh:cursedfleet:'	[OK]
 [deployment]: https://kubernetes.io/docs/concepts/workloads/controllers/deployment/
 [rkt]: https://coreos.com/rkt
 [addon-dns]: https://github.com/kubernetes/kubernetes/blob/master/cluster/addons/dns/README.md
-[addon-dash]: https://github.com/kubernetes/dashboard/blob/master/README.md
 [flannel]: https://github.com/coreos/flannel/blob/master/README.md
 [nginx-hub]: https://hub.docker.com/_/nginx/
 [nginx-highport]: images/nginx_highport.png

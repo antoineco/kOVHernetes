@@ -25,7 +25,7 @@ class Host:
         self.userdata.gen_etc_hosts(client, priv_net)
 
         if any([r in self.roles for r in ['master', 'node']]):
-            self.userdata.gen_kube_data()
+            self.userdata.gen_kube_data(self.roles)
 
             # Dump X.509 CA cert
             ca_crt_pem = dump_certificate(FILETYPE_PEM, ca.cert)
@@ -186,9 +186,6 @@ class Host:
                     }
                 }
             ])
-
-        if 'node' in self.roles:
-            self.userdata.gen_kubenode_data()
 
     def make_body(self):
         body = {

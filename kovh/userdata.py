@@ -28,7 +28,6 @@ files = {
     'scheduler'                : res_plain('data/k8s/manifests/kube-scheduler.json'),
     'addon-manager'            : res_gzip('data/k8s/manifests/kube-addon-manager.yml'),
     # k8s addons manifests
-    'dashboard'                : res_gzip('data/k8s/addons/dashboard.yml'),
     'kubedns'                  : res_gzip('data/k8s/addons/kubedns.yml'),
     'flannel'                  : res_gzip('data/k8s/addons/flannel.yml'),
     # k8s kubeconfig
@@ -38,9 +37,8 @@ files = {
 
 class UserData:
 
-    def __init__(self, k8s_ver='1.10.0', img_suffix='coreos.0'):
+    def __init__(self, k8s_ver='1.11.3'):
         self.k8s_ver = k8s_ver
-        self.img_suffix = img_suffix
 
         # boilerplate ignition config
         self.data = {
@@ -120,7 +118,7 @@ class UserData:
         """Generate Kubernetes Pod manifest"""
 
         manifest = loads(files[component].decode(), object_pairs_hook=OrderedDict)
-        manifest['spec']['containers'][0]['image'] = 'quay.io/coreos/hyperkube:' + tag
+        manifest['spec']['containers'][0]['image'] = 'k8s.gcr.io/hyperkube:v{}'.format(self.k8s_ver)
 
         manifest = compress((dumps(manifest, indent=2) + '\n').encode())
 
@@ -135,14 +133,19 @@ class UserData:
             }
         ])
 
-    def gen_kubelet_unit(self, tag):
+    def gen_kubelet_unit(self, roles):
         """Generate kubelet service unit"""
+
+        labels = ("node-role.kubernetes.io/{}=''".format(r) for r in roles)
 
         self.add_sunits([
             {
                 'name': 'kubelet.service',
                 'enable': True,
-                'contents': files['kubelet'].decode().replace('__IMAGE_TAG__', tag)
+                'contents': (
+                    files['kubelet'].decode()
+                    .replace('__IMAGE_TAG__', 'v{}'.format(self.k8s_ver))
+                    .replace('__NODE_LABELS__', ','.join(labels)))
             }
         ])
 
@@ -170,10 +173,11 @@ class UserData:
             }
         ])
 
-    def gen_kube_data(self):
+    def gen_kube_data(self, roles):
         """Generate data deployed to all Kubernetes instances"""
 
-        self.gen_kubelet_unit('v{}_{}'.format(self.k8s_ver, self.img_suffix))
+        self.gen_kubelet_unit(roles)
+        self.gen_kubemanifest('proxy', 'v{}'.format(self.k8s_ver))
 
         # configure Docker daemon
         self.add_sunits([
@@ -201,7 +205,7 @@ class UserData:
         ])
 
         for component in 'apiserver', 'scheduler', 'controller-manager':
-            self.gen_kubemanifest(component, 'v{}_{}'.format(self.k8s_ver, self.img_suffix))
+            self.gen_kubemanifest(component, 'v{}'.format(self.k8s_ver))
 
         self.add_files([
             {
@@ -222,14 +226,6 @@ class UserData:
             },
             {
                 'filesystem': 'root',
-                'path': '/etc/kubernetes/addons/dashboard.yml' + '.gz',
-                'mode': 416, # 0640
-                'contents': {
-                    'source': 'data:,' + quote(files['dashboard'])
-                }
-            },
-            {
-                'filesystem': 'root',
                 'path': '/etc/kubernetes/addons/flannel.yml' + '.gz',
                 'mode': 416, # 0640
                 'contents': {
@@ -246,8 +242,3 @@ class UserData:
                 }
             }
         ])
-
-    def gen_kubenode_data(self):
-        """Generate data deployed to all Kubernetes nodes"""
-
-        self.gen_kubemanifest('proxy', 'v{}_{}'.format(self.k8s_ver, self.img_suffix))
