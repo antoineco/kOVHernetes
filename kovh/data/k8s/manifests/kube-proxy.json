@@ -13,11 +13,7 @@
         "image": "__IMAGE__",
         "command": [
           "kube-proxy",
-          "--cluster-cidr=172.17.0.0/16",
-          "--healthz-bind-address=127.0.0.1",
-          "--proxy-mode=iptables",
-          "--kubeconfig=/etc/kubernetes/kubeconfig",
-          "--profiling=false"
+          "--config=/etc/kubernetes/kubeproxyconfig"
         ],
         "securityContext": {
           "privileged": true
@@ -38,6 +34,11 @@
           "timeoutSeconds": 15
         },
         "volumeMounts": [
+          {
+            "mountPath": "/etc/kubernetes/kubeproxyconfig",
+            "name": "config",
+            "readOnly": true
+          },
           {
             "mountPath": "/etc/kubernetes/kubeconfig",
             "name": "kubeconfig",
@@ -67,6 +68,12 @@
       }
     ],
     "volumes": [
+      {
+        "hostPath": {
+          "path": "/etc/kubernetes/kubeproxyconfig"
+        },
+        "name": "config"
+      },
       {
         "hostPath": {
           "path": "/etc/kubernetes/kubeconfig-proxy"

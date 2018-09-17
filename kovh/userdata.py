@@ -16,28 +16,33 @@ def res_gzip(resource):
 # Reusable data from static files
 files = {
     # systemd units
-    'coremeta'                 : res_plain('data/systemd/coreos-metadata.service.d/10-provider.conf'),
-    'coremetassh'              : res_plain('data/systemd/coreos-metadata-sshkeys@.service.d/10-provider.conf'),
-    'kubelet'                  : res_plain('data/systemd/kubelet.service'),
-    'etcd'                     : res_plain('data/systemd/etcd-member.service.d/10-daemon.conf'),
-    'docker'                   : res_plain('data/systemd/docker.service.d/10-daemon.conf'),
+    'coremeta'                  : res_plain('data/systemd/coreos-metadata.service.d/10-provider.conf'),
+    'coremetassh'               : res_plain('data/systemd/coreos-metadata-sshkeys@.service.d/10-provider.conf'),
+    'kubelet'                   : res_plain('data/systemd/kubelet.service'),
+    'etcd'                      : res_plain('data/systemd/etcd-member.service.d/10-daemon.conf'),
+    'docker'                    : res_plain('data/systemd/docker.service.d/10-daemon.conf'),
     # k8s components manifests
-    'apiserver'                : res_plain('data/k8s/manifests/kube-apiserver.json'),
-    'proxy'                    : res_plain('data/k8s/manifests/kube-proxy.json'),
-    'controller-manager'       : res_plain('data/k8s/manifests/kube-controller-manager.json'),
-    'scheduler'                : res_plain('data/k8s/manifests/kube-scheduler.json'),
-    'addon-manager'            : res_gzip('data/k8s/manifests/kube-addon-manager.yml'),
+    'apiserver'                 : res_plain('data/k8s/manifests/kube-apiserver.json'),
+    'proxy'                     : res_plain('data/k8s/manifests/kube-proxy.json'),
+    'controller-manager'        : res_plain('data/k8s/manifests/kube-controller-manager.json'),
+    'scheduler'                 : res_plain('data/k8s/manifests/kube-scheduler.json'),
+    'addon-manager'             : res_gzip('data/k8s/manifests/kube-addon-manager.yml'),
+    # k8s components config
+    'kubelet-config'            : res_gzip('data/k8s/kubeletconfig.json'),
+    'proxy-config'              : res_gzip('data/k8s/kubeproxyconfig.json'),
+    'controller-manager-config' : res_gzip('data/k8s/kubecontrollermanagerconfig.json'),
+    'scheduler-config'          : res_gzip('data/k8s/kubeschedulerconfig.json'),
     # k8s addons manifests
-    'kubedns'                  : res_gzip('data/k8s/addons/kubedns.yml'),
-    'flannel'                  : res_gzip('data/k8s/addons/flannel.yml'),
+    'kubedns'                   : res_gzip('data/k8s/addons/kubedns.yml'),
+    'flannel'                   : res_gzip('data/k8s/addons/flannel.yml'),
     # k8s kubeconfig
-    'kubeconfig'               : res_plain('data/k8s/kubeconfig.json')
+    'kubeconfig'                : res_plain('data/k8s/kubeconfig.json')
 }
 
 
 class UserData:
 
-    def __init__(self, k8s_ver='1.11.3'):
+    def __init__(self, k8s_ver='1.12.2'):
         self.k8s_ver = k8s_ver
 
         # boilerplate ignition config
@@ -179,6 +184,25 @@ class UserData:
         self.gen_kubelet_unit(roles)
         self.gen_kubemanifest('proxy', 'v{}'.format(self.k8s_ver))
 
+        self.add_files([
+            {
+                'filesystem': 'root',
+                'path': '/etc/kubernetes/kubeletconfig.gz',
+                'mode': 416, # 0640
+                'contents': {
+                    'source': 'data:,' + quote(files['kubelet-config'])
+                }
+            },
+            {
+                'filesystem': 'root',
+                'path': '/etc/kubernetes/kubeproxyconfig.gz',
+                'mode': 416, # 0640
+                'contents': {
+                    'source': 'data:,' + quote(files['proxy-config'])
+                }
+            }
+        ])
+
         # configure Docker daemon
         self.add_sunits([
             {
@@ -208,6 +232,22 @@ class UserData:
             self.gen_kubemanifest(component, 'v{}'.format(self.k8s_ver))
 
         self.add_files([
+            {
+                'filesystem': 'root',
+                'path': '/etc/kubernetes/kubecontrollermanagerconfig.gz',
+                'mode': 416, # 0640
+                'contents': {
+                    'source': 'data:,' + quote(files['controller-manager-config'])
+                }
+            },
+            {
+                'filesystem': 'root',
+                'path': '/etc/kubernetes/kubeschedulerconfig.gz',
+                'mode': 416, # 0640
+                'contents': {
+                    'source': 'data:,' + quote(files['scheduler-config'])
+                }
+            },
             {
                 'filesystem': 'root',
                 'path': '/etc/kubernetes/manifests/kube-addon-manager.yml' + '.gz',

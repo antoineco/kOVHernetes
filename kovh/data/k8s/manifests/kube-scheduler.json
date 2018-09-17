@@ -13,9 +13,7 @@
         "image": "__IMAGE__",
         "command": [
           "kube-scheduler",
-          "--address=127.0.0.1",
-          "--kubeconfig=/etc/kubernetes/kubeconfig",
-          "--profiling=false"
+          "--config=/etc/kubernetes/kubeschedulerconfig"
         ],
         "resources": {
           "requests": {
@@ -38,6 +36,11 @@
           "timeoutSeconds": 15
         },
         "volumeMounts": [
+          {
+            "mountPath": "/etc/kubernetes/kubeschedulerconfig",
+            "name": "config",
+            "readOnly": true
+          },
           {
             "mountPath": "/etc/kubernetes/kubeconfig",
             "name": "kubeconfig",
@@ -62,6 +65,12 @@
       }
     ],
     "volumes": [
+      {
+        "hostPath": {
+          "path": "/etc/kubernetes/kubeschedulerconfig"
+        },
+        "name": "config"
+      },
       {
         "hostPath": {
           "path": "/etc/kubernetes/kubeconfig-scheduler"
