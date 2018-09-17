@@ -13,7 +13,7 @@ spec:
   hostNetwork: true
   containers:
   - name: kube-addon-manager
-    image: k8s.gcr.io/kube-addon-manager:v8.6
+    image: k8s.gcr.io/kube-addon-manager:v8.7
     resources:
       requests:
         cpu: 5m

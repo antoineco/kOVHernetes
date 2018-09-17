@@ -1,0 +1,29 @@
+{
+  "apiVersion": "kubelet.config.k8s.io/v1beta1",
+  "kind": "KubeletConfiguration",
+  "port": 10250,
+  "readOnlyPort": 0,
+  "healthzBindAddress": "127.0.0.1",
+  "healthzPort": 10248,
+  "staticPodPath": "/etc/kubernetes/manifests",
+  "clusterDomain": "cluster.local",
+  "clusterDNS": [
+    "10.0.0.10"
+  ],
+  "tlsCertFile": "/etc/kubernetes/tls/server/kubeletbundle.crt",
+  "tlsPrivateKeyFile": "/etc/kubernetes/tls/host.key",
+  "authentication": {
+    "x509": {
+      "clientCAFile": "/etc/kubernetes/tls/ca.pem"
+    },
+    "webhook": {
+      "enabled": true
+    },
+    "anonymous": {
+      "enabled": false
+    }
+  },
+  "authorization": {
+    "mode": "Webhook"
+  }
+}

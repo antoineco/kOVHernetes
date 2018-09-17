@@ -1,0 +1,26 @@
+{
+  "apiVersion": "kubecontrollermanager.config.k8s.io/v1alpha1",
+  "kind": "KubeControllerManagerConfiguration",
+  "generic": {
+    "address": "127.0.0.1",
+    "clientConnection": {
+      "kubeconfig": "/etc/kubernetes/kubeconfig"
+    }
+  },
+  "kubeCloudShared": {
+    "allocateNodeCIDRs": true,
+    "clusterCIDR": "172.17.0.0/16",
+    "useServiceAccountCredentials": true
+  },
+  "nodeIPAMController": {
+    "serviceCIDR": "10.0.0.0/16"
+  },
+  "csrSigningController": {
+    "clusterSigningCertFile": "/etc/kubernetes/tls/ca.pem",
+    "clusterSigningKeyFile": "/etc/kubernetes/tls/ca.key"
+  },
+  "saController": {
+    "rootCAFile": "/etc/kubernetes/tls/ca.pem",
+    "serviceAccountKeyFile": "/etc/kubernetes/tls/host.key"
+  }
+}

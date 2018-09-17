@@ -9,6 +9,7 @@ After=coreos-metadata.service
 Restart=on-failure
 RestartSec=10s
 TimeoutStartSec=0
+WorkingDirectory=/etc/kubernetes
 
 EnvironmentFile=/run/metadata/coreos
 Environment="KUBELET_IMAGE_URL=docker://k8s.gcr.io/hyperkube"
@@ -16,27 +17,20 @@ Environment="KUBELET_IMAGE_TAG=__IMAGE_TAG__"
 Environment="RKT_GLOBAL_ARGS=--insecure-options=image"
 Environment="RKT_RUN_ARGS=--uuid-file-save=/var/lib/coreos/kubelet-wrapper.uuid --hosts-entry=host --dns=host --volume cniconf,kind=host,source=/etc/cni/net.d,readOnly=true --mount volume=cniconf,target=/etc/cni/net.d"
 
-ExecStartPre=/usr/bin/gunzip -r /etc/kubernetes
 ExecStartPre=/usr/bin/mkdir --parents /var/lib/coreos
 ExecStartPre=/usr/bin/mkdir --parents /etc/cni/net.d
 ExecStartPre=-/usr/bin/rkt rm --uuid-file=/var/lib/coreos/kubelet-wrapper.uuid
-ExecStartPre=/usr/bin/bash -c \
-  "cat /etc/kubernetes/tls/server/kubelet.crt /etc/kubernetes/tls/ca.pem > /etc/kubernetes/tls/server/kubeletbundle.crt"
+ExecStartPre=/usr/bin/gunzip -r .
+ExecStartPre=/usr/bin/bash -c " \
+  cat tls/server/kubelet.crt tls/ca.pem > tls/server/kubeletbundle.crt && \
+  cat kubeletconfig | jq '.address=\"${COREOS_OPENSTACK_IPV4_LOCAL}\"' > kubeletconfig.tmp && \
+  mv kubeletconfig{.tmp,} \
+  "
 ExecStart=/usr/lib/coreos/kubelet-wrapper \
-  --address=${COREOS_OPENSTACK_IPV4_LOCAL} \
-  --anonymous-auth=false \
-  --authentication-token-webhook \
-  --authorization-mode=Webhook \
-  --client-ca-file=/etc/kubernetes/tls/ca.pem \
-  --cluster-dns=10.0.0.10 \
-  --cluster-domain=cluster.local \
+  --config=/etc/kubernetes/kubeletconfig \
   --kubeconfig=/etc/kubernetes/kubeconfig-kubelet \
   --network-plugin=cni \
-  --node-labels=__NODE_LABELS__ \
-  --pod-manifest-path=/etc/kubernetes/manifests \
-  --read-only-port=0 \
-  --tls-cert-file=/etc/kubernetes/tls/server/kubeletbundle.crt \
-  --tls-private-key-file=/etc/kubernetes/tls/host.key
+  --node-labels=__NODE_LABELS__
 ExecStop=-/usr/bin/rkt stop --uuid-file=/var/lib/coreos/kubelet-wrapper.uuid
 
 [Install]
